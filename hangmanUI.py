@@ -5,28 +5,42 @@ import random  # Import random for word selection
 pygame.init()
 
 # 🎨 Define screen settings
-WIDTH, HEIGHT = 600, 450  # Adjust height for better keyboard spacing
+WIDTH, HEIGHT = 600, 450  # Adjusted height for better keyboard spacing
 WHITE = (255, 255, 255)  # Background color
 BLACK = (0, 0, 0)  # Text color
 BLUE = (65, 120, 189)  # Default key color (#4178bd)
 GRAY = (217, 217, 217)  # Guessed key color (#d9d9d9)
+RECT_COLOR = (12, 192, 223)  # Rectangle color for letters (#0cc0df)
+
+# Fonts
 FONT = pygame.font.Font(None, 40)  # Font for word display
 BUTTON_FONT = pygame.font.Font(None, 30)  # Font for virtual keyboard
+LETTER_FONT = pygame.font.Font(None, 50)  # Font for letter display
 
 # 🖥️ Create screen
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Hangman Game")
 
-# 📜 List of words (Now in UPPERCASE)
+# 📜 List of words (Uppercase)
 words = ["PYTHON", "DEVELOPER", "HANGMAN", "PROGRAMMING", "INTERACTIVE", "CHALLENGE"]
 
 # 🎲 Function to get a random word
 def get_word():
     return random.choice(words)
 
-# 🔡 Function to display the word with guessed letters
-def display_word(word, guessed_letters):
-    return " ".join([letter if letter in guessed_letters else "_" for letter in word])
+# 🔡 Function to draw word with rectangles instead of underscores
+def draw_word(word, guessed_letters):
+    x_start = WIDTH // 2 - (len(word) * 45) // 2  # Centering logic
+    y_start = 150  
+    cell_size = 40  
+
+    for i, letter in enumerate(word):
+        rect_x = x_start + i * (cell_size + 5)  # Space between letters
+        pygame.draw.rect(screen, RECT_COLOR, (rect_x, y_start, cell_size, cell_size), border_radius=5)
+
+        if letter in guessed_letters:
+            text_surface = LETTER_FONT.render(letter, True, BLACK)
+            screen.blit(text_surface, (rect_x + 10, y_start + 5))
 
 # ⌨️ Function to create a **QWERTY-based virtual keyboard**
 def create_virtual_keyboard():
@@ -71,10 +85,8 @@ def play_hangman():
     while running:
         screen.fill(WHITE)  # Reset screen
 
-        # 📝 Display word being guessed
-        displayed_text = display_word(word, guessed_letters)
-        text_surface = FONT.render(displayed_text, True, BLACK)
-        screen.blit(text_surface, (WIDTH // 2 - 100, 100))
+        # 🔤 Display word as rectangles
+        draw_word(word, guessed_letters)
 
         # 🔘 Draw the virtual keyboard
         draw_virtual_keyboard(keys, guessed_letters)
