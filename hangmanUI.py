@@ -10,6 +10,8 @@ WHITE = (255, 255, 255)  # Background color
 BLACK = (0, 0, 0)  # Text color
 BLUE = (65, 120, 189)  # Default key color (#4178bd)
 GRAY = (217, 217, 217)  # Guessed key color (#d9d9d9)
+RED = (222, 52, 52)  
+ORANGE = (251, 179, 22)
 RECT_COLOR = (12, 192, 223)  # Rectangle color for letters (#0cc0df)
 
 # Fonts
@@ -74,11 +76,37 @@ def draw_virtual_keyboard(keys, guessed_letters):
         text_surface = BUTTON_FONT.render(letter, True, WHITE)  # Render letter (always white)
         screen.blit(text_surface, (rect.x + 10, rect.y + 5))  # Position text at center
 
+# Function to draw attempt indicators
+def draw_attempts(attempts):
+    x_start = WIDTH // 2 - 90  # 📌 Shift to the left for better centering
+    y_start = 30  # 📌 Slightly higher for balance
+    width, height = 40, 50  # 📏 Updated rectangle size
+
+    spacing = width + 15  # 📏 Adjusted spacing between rectangles
+
+    # 🎨 Define X mark font
+    X_FONT = pygame.font.Font(None, 45)  # Slightly larger X
+
+    # 🔄 Loop through 4 attempt slots
+    for i in range(4):
+        pygame.draw.rect(screen, RED, 
+                         (x_start + (i * spacing), y_start, width, height), 
+                         border_radius=5)  # 🟥 Keep all rectangles red
+
+    # ❌ Display X marks over the rectangles for every wrong attempt
+    wrong_attempts = 4 - attempts  # 🔢 How many mistakes were made?
+
+    for i in range(wrong_attempts):  
+        x_pos = x_start + (i * spacing) + 7  # 📌 Adjust X position for centering
+        y_pos = y_start + 10  # 📌 Center X within the rectangle
+        text_surface = X_FONT.render("X", True, ORANGE)  # 🎨 X in #fbb316
+        screen.blit(text_surface, (x_pos, y_pos))  # 🖥️ Display X mark
+
 # 🎮 Main game function
 def play_hangman():
     word = get_word()  # Pick a random word
     guessed_letters = set()  # Store guessed letters
-    attempts = 6  # Maximum incorrect guesses
+    attempts = 4  # Maximum incorrect guesses
     keys = create_virtual_keyboard()  # Generate virtual keyboard
     running = True  # Control game loop
 
@@ -91,9 +119,8 @@ def play_hangman():
         # 🔘 Draw the virtual keyboard
         draw_virtual_keyboard(keys, guessed_letters)
 
-        # 🔢 Show attempts left
-        attempt_text = FONT.render(f"Attempts left: {attempts}", True, BLACK)
-        screen.blit(attempt_text, (WIDTH // 2 - 100, 50))
+        # 🔢 Draw attempt indicators
+        draw_attempts(attempts)
 
         # 🔄 Update screen
         pygame.display.flip()
