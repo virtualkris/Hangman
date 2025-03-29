@@ -52,9 +52,9 @@ def draw_game_controls():
     if not game_started:
         text = "CLICK TO START GAME"
     elif game_over:
-        text = "WANT TO PLAY AGAIN?"
+        text = "GAME OVER! WANT TO PLAY AGAIN?"
     else:
-        return  # No button needed mid-game
+        return None  # No button needed mid-game
     
     # 📝 Draw text indicator above the button
     font = pygame.font.Font(None, 30)
@@ -73,6 +73,9 @@ def draw_game_controls():
     button_surface = font.render(button_text, True, text_color)
     button_text_rect = button_surface.get_rect(center=(WIDTH // 2, button_y + button_height // 2))
     screen.blit(button_surface, button_text_rect)
+
+    # ✅ Return the button rectangle
+    return pygame.Rect(button_x, button_y, button_width, button_height)
 
 # 🖱 Handle Play and Play Again button clicks
 def handle_button_click(pos):
@@ -200,7 +203,7 @@ def draw_levels(level):
 
 # 🎮 Main game function
 def play_hangman():
-    global game_started, game_over
+    global game_started, game_over # Game state variables
     level = 1  # Start at level 1
     word = get_word()  # Pick a random word
     guessed_letters = set()  # Store guessed letters
@@ -227,22 +230,38 @@ def play_hangman():
         # 🔄 Update screen
         pygame.display.flip()
 
+        pygame.time.delay(100)  # Delay for smoother animation
+
+        # # 🚨 If game over, show "Play Again" button
+        play_again_button = draw_game_controls()  # Get button rectangle
+
         # 🎭 Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # Exit game
                 running = False
 
             elif event.type == pygame.MOUSEBUTTONDOWN:  # Detect mouse clicks
-                handle_button_click(event.pos)  # Handle button clicks  
+                mouse_pos = pygame.mouse.get_pos()  # Get mouse position 
             
-            elif event.type == pygame.MOUSEBUTTONDOWN:  # Detect mouse clicks
-                mouse_pos = pygame.mouse.get_pos()  # Get mouse position
-                for letter, rect in keys.items():  # Check all keys
-                    if rect.collidepoint(mouse_pos):  # If clicked
-                        if letter not in guessed_letters:
-                            guessed_letters.add(letter)  # Mark as guessed
-                            if letter not in word:
-                                attempts -= 1  # Wrong guess
+                # 🎮 Handle Play Again button click (Only when game is over)
+                if game_over and play_again_button.collidepoint(mouse_pos):
+                    game_over = False # Reset game state
+                    level = 1 # Reset level
+                    word = get_word() # Get a new word
+                    guessed_letters.clear() # Clear guessed letters
+                    attempts = 4 # Reset attempts
+
+                # 🖱️ Handle virtual keyboard clicks
+                elif not game_over:  # Only if game is active
+                    for letter, rect in keys.items():
+                        if rect.collidepoint(mouse_pos): # If clicked on a key
+                            if letter not in guessed_letters:
+                                guessed_letters.add(letter) # Mark as guessed
+                                if letter not in word:
+                                    attempts -= 1 # Wrong guess
+
+                # 🎮 Handle other button clicks
+                handle_button_click(event.pos)
 
             elif event.type == pygame.KEYDOWN:  # Detect physical keyboard input
                 guess = event.unicode.upper()  # Convert to uppercase
@@ -252,7 +271,7 @@ def play_hangman():
                         attempts -= 1  # Wrong guess
 
             # 🏆 Check win condition
-            if all(letter in guessed_letters for letter in word):
+            if not game_over and all(letter in guessed_letters for letter in word):
                 if level < 10:
                     level += 1  
                     word = get_word()  
@@ -262,9 +281,8 @@ def play_hangman():
                     game_over = True  # 🚨 Game over after Level 10! 
 
             # ☠️ Check loss condition
-            if attempts == 0:
+            if not game_over and attempts == 0:
                 game_over = True  # 🚨 Game over when attempts run out!
-
 
     pygame.quit()  # Quit Pygame after game ends
 
