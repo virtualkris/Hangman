@@ -35,6 +35,11 @@ attempts = 4
 guessed_letters = set()
 selected_word = ""
 
+# Load Sounds
+correct_sound = pygame.mixer.Sound("correct.mp3")
+wrong_sound = pygame.mixer.Sound("wrong-2.mp3")
+warning_sound = pygame.mixer.Sound("warning.mp3")
+
 # 🎮 Draw Play and Play Again buttons
 def draw_game_controls():
     global game_started, game_over
@@ -153,6 +158,8 @@ def draw_virtual_keyboard(keys, guessed_letters):
 
 # Function to draw attempt indicators
 def draw_attempts(attempts):
+    global warning_sound # Load warning sound
+
     if not game_started or game_over:
         return # Draw attempts only if the game is active
     
@@ -179,6 +186,16 @@ def draw_attempts(attempts):
         y_pos = y_start + 10  # 📌 Center X within the rectangle
         text_surface = X_FONT.render("X", True, ORANGE)  # 🎨 X in #fbb316
         screen.blit(text_surface, (x_pos, y_pos))  # 🖥️ Display X mark
+
+    # Track if warning sound has already played
+    warning_sound_play = False  # Define outside function
+
+    # 🔊 Play warning sound only once when attempts drop to 1
+    if attempts == 1 and not warning_sound_play:
+        warning_sound.play()
+        warning_sound_play = True  # Prevent multiple plays
+    elif attempts > 1:
+        warning_sound_play = False  # Reset flag if attempts increase
 
 # 🔵 Function to draw level indicators
 def draw_levels(level):
@@ -257,8 +274,11 @@ def play_hangman():
                         if rect.collidepoint(mouse_pos): # If clicked on a key
                             if letter not in guessed_letters:
                                 guessed_letters.add(letter) # Mark as guessed
-                                if letter not in word:
+                                if letter in word:
+                                    correct_sound.play()
+                                else:
                                     attempts -= 1 # Wrong guess
+                                    wrong_sound.play() # Play wrong sound
 
                 # 🎮 Handle other button clicks
                 handle_button_click(event.pos)
@@ -267,8 +287,11 @@ def play_hangman():
                 guess = event.unicode.upper()  # Convert to uppercase
                 if guess in keys and guess not in guessed_letters:  # Valid letter
                     guessed_letters.add(guess)  # Mark as guessed
-                    if guess not in word:
-                        attempts -= 1  # Wrong guess
+                    if guess in word:
+                        correct_sound.play()  # ✅ Play correct sound
+                    else:
+                        attempts -= 1  # ❌ Wrong guess
+                        wrong_sound.play()  # 🔊 Play wrong sound
 
             # 🏆 Check win condition
             if not game_over and all(letter in guessed_letters for letter in word):
