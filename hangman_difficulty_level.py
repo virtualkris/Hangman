@@ -359,7 +359,7 @@ def play_hangman():
             if difficulty_selected and not game_over and all(letter in guessed_letters for letter in selected_word):
                 if level < 10:
                     level += 1  
-                    word = get_word()  
+                    selected_word = get_word(selected_difficulty)  # Get new word
                     guessed_letters.clear()  
                     attempts = 4  
                 else:
