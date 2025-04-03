@@ -1,5 +1,6 @@
 import pygame  # Import pygame for UI
 import random  # Import random for word selection
+import sys
 
 # Initialize Pygame
 pygame.init()
@@ -40,6 +41,7 @@ words_by_difficulty = {
 # Game variables
 game_started = False # Game state
 game_over = False # Game over state
+level_completed = False # Level completion state
 difficulty_selected = False # Difficulty state
 level = 0 # Current level
 attempts = 4 # Number of attempts
@@ -54,24 +56,32 @@ warning_sound = pygame.mixer.Sound("warning.mp3")
 
 # 🎮 Draw Play and Play Again buttons
 def draw_game_controls():
-    global game_started, game_over
+    global game_started, game_over, level_completed
 
     button_color = (71, 185, 112)  # #47b970
     border_color = (12, 192, 223)  # #0cc0df
+    quit_button_color = (255, 0, 0)  # Red color for quit button (no border)
     text_color = (0, 0, 0)  # Black
 
     button_x = WIDTH // 2 - 80
-    button_y = HEIGHT // 2 + -100
+    button_y = HEIGHT // 2 - 100  # Adjust the starting Y for the first button
     button_width = 160
     button_height = 50
 
-    ## Determine the text and display indicator
+    # Initialize quit_button_y in case of game over or completion of 10 levels
+    quit_button_y = None
+
+    # Determine the text and display indicator
     if not game_started:
         text = "CLICK TO START GAME"
     elif game_over:
         text = "GAME OVER! WANT TO PLAY AGAIN?"
+        quit_button_y = button_y + button_height + 10  # Position the quit button below the play again button
+    elif level_completed:  # If game completed 10 levels, show the congratulatory message
+        text = "CONGRATULATIONS! YOU COMPLETED 10 LEVELS!"
+        quit_button_y = button_y + button_height + 10  # Position the quit button below the play again button
     else:
-        return None  # No button needed mid-game
+        return None, None  # No button needed mid-game
     
     # 📝 Draw text indicator above the button
     font = pygame.font.Font(None, 30)
@@ -91,16 +101,30 @@ def draw_game_controls():
     button_text_rect = button_surface.get_rect(center=(WIDTH // 2, button_y + button_height // 2))
     screen.blit(button_surface, button_text_rect)
 
-    # ✅ Return the button rectangle
-    return pygame.Rect(button_x, button_y, button_width, button_height)
+    # 🟥 Draw the QUIT button (Red button, no border)
+    quit_button_rect = None
+    if quit_button_y is not None:  # Ensure quit_button_y is not None before drawing
+        pygame.draw.rect(screen, quit_button_color, (button_x, quit_button_y, button_width, button_height), border_radius=8)
+        
+        # 📝 Draw "QUIT" button text
+        quit_button_text = "QUIT"
+        quit_button_surface = font.render(quit_button_text, True, text_color)
+        quit_button_text_rect = quit_button_surface.get_rect(center=(WIDTH // 2, quit_button_y + button_height // 2))
+        screen.blit(quit_button_surface, quit_button_text_rect)
+
+        # Create quit button rectangle for collision detection
+        quit_button_rect = pygame.Rect(button_x, quit_button_y, button_width, button_height)
+
+    # ✅ Return both button rectangles
+    return pygame.Rect(button_x, button_y, button_width, button_height), quit_button_rect
 
 # 🎮 Draw Difficulty Buttons (Stacked)
 def draw_difficulty_buttons():
     global difficulty_selected
 
-    y_start = HEIGHT // 2 - 60
-    button_width = 180
-    button_height = 40
+    y_start = HEIGHT // 2 - 60 # Centered vertically
+    button_width = 180 # Width of the buttons
+    button_height = 40 # Height of the buttons
     spacing = 5
 
     difficulties = ["Easy", "Normal", "Medium", "Hard"]
@@ -112,8 +136,8 @@ def draw_difficulty_buttons():
     screen.blit(title_text, (WIDTH // 2 - 100, y_start - 50))
 
     for i, difficulty in enumerate(difficulties):
-        button_x = WIDTH // 2 - button_width // 2
-        button_y = y_start + (i * (button_height + spacing))
+        button_x = WIDTH // 2 - button_width // 2  # Centered horizontally
+        button_y = y_start + (i * (button_height + spacing)) # Centered vertically
         pygame.draw.rect(screen, colors[i], (button_x, button_y, button_width, button_height), border_radius=8)
 
         text_surface = BUTTON_FONT.render(difficulty, True, BLACK)
@@ -274,7 +298,7 @@ def show_word_flash(screen, word, color, font):
 
 # 🎮 Main game function
 def play_hangman():
-    global game_started, game_over, difficulty_selected, selected_difficulty, selected_word
+    global game_started, game_over, level_completed, difficulty_selected, selected_difficulty, selected_word
     
     level = 0  # Start at level 1
     guessed_letters = set()  # Store guessed letters
@@ -291,11 +315,9 @@ def play_hangman():
         elif game_started and not difficulty_selected:
             draw_difficulty_buttons()  # Draw difficulty selection buttons
         elif game_over:
-            draw_game_controls()  # Draw Play Again button
-            draw_word(selected_word, guessed_letters)  # Display word as rectangles
-            draw_virtual_keyboard(keys, guessed_letters)  # Draw the virtual keyboard
-            draw_attempts(attempts)  # Show remaining attempts
-            draw_levels(level)  # Show level progress
+            main_button_rect, quit_button_rect = draw_game_controls()  # Draw Play Again and Quit buttons
+        elif level_completed:  # If level 10 is completed, show the congratulations message
+            main_button_rect, quit_button_rect = draw_game_controls()  # Draw congratulations and quit button
         else:
             draw_game_controls()  # Draw game controls
             draw_word(selected_word, guessed_letters)  # Display word
@@ -317,14 +339,32 @@ def play_hangman():
                 if not game_started:  # Game hasn't started, handle Play or Difficulty selection
                     handle_button_click(mouse_pos)  # Start game or handle difficulty selection
                 
-                elif game_over:  # If game is over, handle Play Again button and Difficulty button
-                    if draw_game_controls().collidepoint(mouse_pos):  # Play Again button clicked
+                elif game_over:  # If game is over, handle Play Again button and Quit button
+                    main_button_rect, quit_button_rect = draw_game_controls()  # Draw buttons
+                    if main_button_rect.collidepoint(mouse_pos):  # Play Again button clicked
                         game_over = False
                         level = 0  # Reset level when restarting the game
                         difficulty_selected = False  # Reset difficulty
                         guessed_letters.clear()
                         attempts = 4
                         selected_word = get_word(selected_difficulty)  # New word after Play Again
+                    elif quit_button_rect.collidepoint(mouse_pos):  # Quit button clicked
+                        pygame.quit()
+                        sys.exit()
+                    else:
+                        handle_button_click(mouse_pos)  # Difficulty button clicked
+
+                elif level_completed:  # If the player completed level 10, handle button click
+                    main_button_rect, quit_button_rect = draw_game_controls()  # Draw buttons
+                    if main_button_rect.collidepoint(mouse_pos):  # Play Again button clicked
+                        level_completed = False  # Reset level completion
+                        level = 0  # Reset level when restarting the game
+                        guessed_letters.clear()
+                        attempts = 4
+                        selected_word = get_word(selected_difficulty)  # New word after Play Again
+                    elif quit_button_rect.collidepoint(mouse_pos):  # Quit button clicked
+                        pygame.quit()
+                        sys.exit()
                     else:
                         handle_button_click(mouse_pos)  # Difficulty button clicked
 
@@ -345,8 +385,8 @@ def play_hangman():
                                         selected_word = get_word(selected_difficulty)
                                         
                                         # Check if level has reached 10 to trigger game over
-                                        if level >= 10:
-                                            game_over = True  # Game over after Level 10
+                                        if level == 10:
+                                            level_completed = True  # Game over after Level 10
                                             break
                                 else:
                                     attempts -= 1
@@ -375,12 +415,14 @@ def play_hangman():
                     guessed_letters.clear()  
                     attempts = 4  
                 else:
-                    game_over = True  # 🚨 Game over after Level 10!
-
-            # ☠️ Check loss condition
+                    level_completed = True
+                    break
+            
+            # Check loss condition
             if not game_over and attempts == 0:
                 show_word_flash(screen, selected_word, (255, 0, 0), FONT)
-                game_over = True  # Game over due to 0 attempts
+                pygame.time.delay(500)
+                game_over = True
 
     pygame.quit()
 
