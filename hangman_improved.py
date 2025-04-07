@@ -25,6 +25,7 @@ HARD_COLOR = (222, 52, 52)  # Red (#de3434)
 FONT = pygame.font.Font(None, 40)  # Font for word display
 BUTTON_FONT = pygame.font.Font(None, 30)  # Font for virtual keyboard
 LETTER_FONT = pygame.font.Font(None, 50)  # Font for letter display
+CATEGORY_FONT = pygame.font.SysFont(None, 28)  # Smaller size than LETTER_FONT
 
 # 🖥️ Create screen
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -36,6 +37,14 @@ words_by_difficulty = {
     "Normal": ["NETWORK", "CODING", "DATABASE", "SECURITY", "ALGORITHM", "HARDWARE", "SOFTWARE", "ANALYSIS", "SERVERS", "VIRTUAL"],
     "Medium": ["MOTION", "RENDER", "LIGHTING", "GRAPHICS", "FRAMERATE", "MODEL", "ANIMATION", "KEYFRAME", "RIGGING", "TEXTURING"],
     "Hard": ["JAVASCRIPT", "PYTHON", "PROGRAMMER", "DEBUGGING", "FRAMEWORK", "BACKEND", "FRONTEND", "ALGORITHMS", "COMPILER", "RECURSION"]
+}
+
+# 🏷️ Category Names per Difficulty
+category_by_difficulty = {
+    "Easy": "Visual Graphic Design",
+    "Normal": "Information Technology",
+    "Medium": "3D Animation & Rendering",
+    "Hard": "Programming & Development"
 }
 
 # Game variables
@@ -182,17 +191,24 @@ def handle_button_click(pos):
                 difficulty_selected = True
                 return
 
-# 🔡 Function to draw word with rectangles instead of underscores
+# 🔡 Function to draw word with rectangles and display category
 def draw_word(selected_word, guessed_letters):
     if not game_started or game_over or not difficulty_selected:
-        return  # Only draw if game is active and difficulty is selected 
+        return  # Only draw if game is active and difficulty is selected
 
-    x_start = WIDTH // 2 - (len(selected_word) * 45) // 2  # Centering logic
-    y_start = 150  
-    cell_size = 40  
+    # 🏷️ Display Category Name (based on difficulty)
+    category_name = category_by_difficulty.get(selected_difficulty, "Unknown Category")
+    category_surface = CATEGORY_FONT.render(f"Category: {category_name}", True, (80, 80, 80))
+    category_rect = category_surface.get_rect(center=(WIDTH // 2, 110))  # Positioned above word panel
+    screen.blit(category_surface, category_rect)
 
-    for i, letter in enumerate(selected_word): 
-        rect_x = x_start + i * (cell_size + 5)  # Space between letters
+    # 🧩 Draw Word Panel
+    x_start = WIDTH // 2 - (len(selected_word) * 45) // 2
+    y_start = 150
+    cell_size = 40
+
+    for i, letter in enumerate(selected_word):
+        rect_x = x_start + i * (cell_size + 5)
         pygame.draw.rect(screen, RECT_COLOR, (rect_x, y_start, cell_size, cell_size), border_radius=5)
 
         if letter in guessed_letters:
