@@ -1,5 +1,6 @@
 import pygame  # Import pygame for UI
 import random  # Import random for word selection
+import sys
 
 # Initialize Pygame
 pygame.init()
@@ -14,26 +15,75 @@ RED = (222, 52, 52)  # Attempt indicator color (#de3434)
 ORANGE = (251, 179, 22)  # X mark and active level color (#fbb316)
 RECT_COLOR = (12, 192, 223)  # Rectangle color for letters (#0cc0df)
 
+# 🎨 Difficulty Button Colors
+EASY_COLOR = (71, 185, 112)  # Green (#47b970)
+NORMAL_COLOR = (12, 192, 223)  # Cyan (#0cc0df)
+MEDIUM_COLOR = (251, 179, 22)  # Orange (#fbb316)
+HARD_COLOR = (222, 52, 52)  # Red (#de3434)
+
 # Fonts
 FONT = pygame.font.Font(None, 40)  # Font for word display
 BUTTON_FONT = pygame.font.Font(None, 30)  # Font for virtual keyboard
 LETTER_FONT = pygame.font.Font(None, 50)  # Font for letter display
+CATEGORY_FONT = pygame.font.SysFont(None, 28)  # Smaller size than LETTER_FONT
+CLUE_FONT = pygame.font.SysFont(None, 15)  # Smaller font size for the clue
+
 
 # 🖥️ Create screen
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Hangman Game")
 
-# 📜 List of words (Uppercase)
-words = ["PYTHON", "DEVELOPER", "HANGMAN", "PROGRAMMING", "INTERACTIVE", "CHALLENGE", "SOFTWARE",
-         "COMPUTER", "ALGORITHM", "DEBUGGING"]  # Expanded for 10 levels
+# 📜 Word Lists by Difficulty with Clues
+words_by_difficulty = {
+    "Easy": [
+        {"word": "HUMAN", "clue": "A bipedal primate species, known for its intelligence and ability to create complex tools."},
+        {"word": "EAGLE", "clue": "A large bird of prey, known for its keen eyesight and powerful flight."},
+        {"word": "PANTHER", "clue": "A big cat found in the Americas, known for its stealthy hunting skills."},
+        {"word": "CROCODILE", "clue": "A large reptile that lives in rivers and is known for its sharp teeth and strong jaws."},
+        {"word": "TORTOISE", "clue": "A slow-moving land reptile with a hard shell that protects its body."},
+    ],
+    "Normal": [
+        {"word": "NETWORK", "clue": "A group of interconnected computers that share resources."},
+        {"word": "CODING", "clue": "The process of writing instructions for a computer to follow."},
+        {"word": "DATABASE", "clue": "An organized collection of data, typically stored and accessed electronically."},
+        {"word": "SECURITY", "clue": "Measures taken to protect against unauthorized access or attacks."},
+        {"word": "ALGORITHM", "clue": "A set of rules or steps followed to solve a problem or complete a task."},
+    ],
+    "Medium": [
+        {"word": "MOTION", "clue": "The action or process of moving or being moved."},
+        {"word": "RENDER", "clue": "The process of generating an image from a model, often used in 3D graphics."},
+        {"word": "LIGHTING", "clue": "The arrangement or effect of light in a space or scene."},
+        {"word": "GRAPHICS", "clue": "Visual images or designs, often used in digital media."},
+        {"word": "FRAMERATE", "clue": "The frequency at which frames are displayed in a video or animation."},
+    ],
+    "Hard": [
+        {"word": "JAVASCRIPT", "clue": "A programming language commonly used for web development."},
+        {"word": "PYTHON", "clue": "A high-level programming language known for its readability and simplicity."},
+        {"word": "PROGRAMMER", "clue": "A person who writes and tests computer programs."},
+        {"word": "DEBUGGING", "clue": "The process of identifying and fixing bugs or issues in a computer program."},
+        {"word": "FRAMEWORK", "clue": "A platform for building software applications, providing a foundation for development."},
+    ]
+}
+
+# 🏷️ Category Names per Difficulty
+category_by_difficulty = {
+    "Easy": "Animal Kingdom",
+    "Normal": "Information Technology",
+    "Medium": "3D Animation & Rendering",
+    "Hard": "Programming & Development"
+}
 
 # Game variables
-game_started = False
-game_over = False
-level = 1
-attempts = 4
-guessed_letters = set()
-selected_word = ""
+game_started = False # Game state
+game_over = False # Game over state
+level_completed = False # Level completion state
+difficulty_selected = False # Difficulty state
+level = 0 # Current level
+attempts = 4 # Number of attempts
+guessed_letters = set() # Set to store guessed letters
+selected_word = "" # Word to guess
+selected_difficulty = "" # Selected difficulty
+shuffled_words = []  # List of non-repeating words per game
 
 # Load Sounds
 correct_sound = pygame.mixer.Sound("correct.mp3")
@@ -42,24 +92,32 @@ warning_sound = pygame.mixer.Sound("warning.mp3")
 
 # 🎮 Draw Play and Play Again buttons
 def draw_game_controls():
-    global game_started, game_over
+    global game_started, game_over, level_completed
 
     button_color = (71, 185, 112)  # #47b970
     border_color = (12, 192, 223)  # #0cc0df
+    quit_button_color = (255, 0, 0)  # Red color for quit button (no border)
     text_color = (0, 0, 0)  # Black
 
     button_x = WIDTH // 2 - 80
-    button_y = HEIGHT // 2 + 100
+    button_y = HEIGHT // 2 - 100  # Adjust the starting Y for the first button
     button_width = 160
     button_height = 50
 
-    ## Determine the text and display indicator
+    # Initialize quit_button_y in case of game over or completion of 10 levels
+    quit_button_y = None
+
+    # Determine the text and display indicator
     if not game_started:
         text = "CLICK TO START GAME"
     elif game_over:
         text = "GAME OVER! WANT TO PLAY AGAIN?"
+        quit_button_y = button_y + button_height + 10  # Position the quit button below the play again button
+    elif level_completed:  # If game completed 10 levels, show the congratulatory message
+        text = "CONGRATULATIONS! YOU COMPLETED 10 LEVELS!"
+        quit_button_y = button_y + button_height + 10  # Position the quit button below the play again button
     else:
-        return None  # No button needed mid-game
+        return None, None  # No button needed mid-game
     
     # 📝 Draw text indicator above the button
     font = pygame.font.Font(None, 30)
@@ -79,47 +137,137 @@ def draw_game_controls():
     button_text_rect = button_surface.get_rect(center=(WIDTH // 2, button_y + button_height // 2))
     screen.blit(button_surface, button_text_rect)
 
-    # ✅ Return the button rectangle
-    return pygame.Rect(button_x, button_y, button_width, button_height)
+    # 🟥 Draw the QUIT button (Red button, no border)
+    quit_button_rect = None
+    if quit_button_y is not None:  # Ensure quit_button_y is not None before drawing
+        pygame.draw.rect(screen, quit_button_color, (button_x, quit_button_y, button_width, button_height), border_radius=8)
+        
+        # 📝 Draw "QUIT" button text
+        quit_button_text = "QUIT"
+        quit_button_surface = font.render(quit_button_text, True, text_color)
+        quit_button_text_rect = quit_button_surface.get_rect(center=(WIDTH // 2, quit_button_y + button_height // 2))
+        screen.blit(quit_button_surface, quit_button_text_rect)
 
-# 🖱 Handle Play and Play Again button clicks
+        # Create quit button rectangle for collision detection
+        quit_button_rect = pygame.Rect(button_x, quit_button_y, button_width, button_height)
+
+    # ✅ Return both button rectangles
+    return pygame.Rect(button_x, button_y, button_width, button_height), quit_button_rect
+
+# 🎮 Draw Difficulty Buttons (Stacked)
+def draw_difficulty_buttons():
+    global difficulty_selected
+
+    y_start = HEIGHT // 2 - 60 # Centered vertically
+    button_width = 180 # Width of the buttons
+    button_height = 40 # Height of the buttons
+    spacing = 5
+
+    difficulties = ["Easy", "Normal", "Medium", "Hard"]
+    colors = [EASY_COLOR, NORMAL_COLOR, MEDIUM_COLOR, HARD_COLOR]
+    button_rects = {}
+
+    title_font = pygame.font.Font(None, 35)
+    title_text = title_font.render("CHOOSE DIFFICULTY", True, BLACK)
+    screen.blit(title_text, (WIDTH // 2 - 100, y_start - 50))
+
+    for i, difficulty in enumerate(difficulties):
+        button_x = WIDTH // 2 - button_width // 2  # Centered horizontally
+        button_y = y_start + (i * (button_height + spacing)) # Centered vertically
+        pygame.draw.rect(screen, colors[i], (button_x, button_y, button_width, button_height), border_radius=8)
+
+        text_surface = BUTTON_FONT.render(difficulty, True, BLACK)
+        text_rect = text_surface.get_rect(center=(button_x + button_width // 2, button_y + button_height // 2))
+        screen.blit(text_surface, text_rect)
+
+        button_rects[difficulty] = pygame.Rect(button_x, button_y, button_width, button_height)
+
+    return button_rects
+
+# Function to get a random word based on difficulty
+def get_word(difficulty):
+    global shuffled_words
+
+    if not shuffled_words:
+        shuffled_words = words_by_difficulty[difficulty][:]
+        random.shuffle(shuffled_words)
+
+    return shuffled_words.pop() ## Get a word from the shuffled list
+
+# Function to handle Play, Play Again, and Difficulty buttons
 def handle_button_click(pos):
     global game_started, game_over, attempts, level, selected_word, guessed_letters
+    global selected_difficulty, difficulty_selected, shuffled_words
 
-    button_x = WIDTH // 2 - 80
-    button_y = HEIGHT // 2 + 100
+    button_x = WIDTH // 2 - 80  # Centered button
+    button_y = HEIGHT // 2 + -100 # Centered button
     button_width = 160
     button_height = 50
 
-    # Check if the mouse click is within the button area
+    # Check if the Play or Play Again button is clicked
     if button_x <= pos[0] <= button_x + button_width and button_y <= pos[1] <= button_y + button_height:
         game_started = True
         game_over = False
         attempts = 4
         level = 1 if level >= 10 else level + 1  # Reset after 10 levels
         guessed_letters.clear()
-        selected_word = random.choice(words)  # Select a new word when restarting
+        difficulty_selected = False  # Reset difficulty selection on a new game
+        shuffled_words = []  # Clear shuffled words when restarting the game
+        return  # Exit to avoid checking difficulty buttons immediately
 
-# 🎲 Function to get a random word
-def get_word():
-    return random.choice(words)
+    # Check if a difficulty button is clicked after starting the game
+    if game_started and not difficulty_selected:
+        difficulty_buttons = draw_difficulty_buttons()
+        for difficulty, rect in difficulty_buttons.items():
+            if rect.collidepoint(pos):
+                selected_difficulty = difficulty
+                difficulty_selected = True
 
-# 🔡 Function to draw word with rectangles instead of underscores
-def draw_word(word, guessed_letters):
-    if not game_started or game_over:
-        return  # Only draw if game is active
-    
-    x_start = WIDTH // 2 - (len(word) * 45) // 2  # Centering logic
-    y_start = 150  
-    cell_size = 40  
+                # Shuffle words once and store them
+                shuffled_words = words_by_difficulty[selected_difficulty][:]
+                random.shuffle(shuffled_words)
 
+                # 🎯 Select first word
+                if shuffled_words:
+                    selected_word = shuffled_words.pop()
+                return  # Exit to avoid checking Play button again
+
+# 🔡 Function to draw word with rectangles and display category
+def draw_word(selected_word, guessed_letters):
+    if not game_started or game_over or not difficulty_selected:
+        return  # Only draw if game is active and difficulty is selected
+
+    # 🏷️ Display Category Name (based on difficulty)
+    category_name = category_by_difficulty.get(selected_difficulty, "Unknown Category")
+    category_surface = CATEGORY_FONT.render(f"Category: {category_name}", True, (80, 80, 80))
+    category_rect = category_surface.get_rect(center=(WIDTH // 2, 130))  # Positioned above word panel
+    screen.blit(category_surface, category_rect)
+
+    # 🧩 Draw Word Panel
+    word = selected_word['word']  # Extract the word from selected_word
+    clue = selected_word['clue']  # Extract the clue from selected_word
+    x_start = WIDTH // 2 - (len(word.replace(" ", "")) * 45) // 2  # Adjust for spaces
+    y_start = 150
+    cell_size = 40
+
+    # Draw the word's letters
     for i, letter in enumerate(word):
-        rect_x = x_start + i * (cell_size + 5)  # Space between letters
+        # Adjust position for spaces (no rectangle drawn for spaces)
+        if letter == " ":
+            x_start += cell_size + 5  # Skip space area
+            continue
+
+        rect_x = x_start + i * (cell_size + 5)  # Normal letter positions
         pygame.draw.rect(screen, RECT_COLOR, (rect_x, y_start, cell_size, cell_size), border_radius=5)
 
         if letter in guessed_letters:
-            text_surface = LETTER_FONT.render(letter, True, BLACK)
-            screen.blit(text_surface, (rect_x + 10, y_start + 5))
+            text_surface = LETTER_FONT.render(letter, True, WHITE)
+            text_rect = text_surface.get_rect(center=(rect_x + cell_size // 2, y_start + cell_size // 2))
+            screen.blit(text_surface, text_rect)
+
+    clue_surface = CLUE_FONT.render(f"Clue: {clue}", True, (100, 100, 100))  # Render clue in a smaller font
+    clue_rect = clue_surface.get_rect(center=(WIDTH // 2, y_start + cell_size + 40))  # Positioned below the word panel
+    screen.blit(clue_surface, clue_rect)
 
 # ⌨️ Function to create a **QWERTY-based virtual keyboard**
 def create_virtual_keyboard():
@@ -153,7 +301,7 @@ def draw_virtual_keyboard(keys, guessed_letters):
     for letter, rect in keys.items():
         color = GRAY if letter in guessed_letters else BLUE  # Change color when guessed
         pygame.draw.rect(screen, color, rect, border_radius=5)  # Draw key
-        text_surface = BUTTON_FONT.render(letter, True, WHITE)  # Render letter (always white)
+        text_surface = BUTTON_FONT.render(letter, True, BLACK)  # Render letter (always white)
         screen.blit(text_surface, (rect.x + 10, rect.y + 5))  # Position text at center
 
 # Function to draw attempt indicators
@@ -187,16 +335,6 @@ def draw_attempts(attempts):
         text_surface = X_FONT.render("X", True, ORANGE)  # 🎨 X in #fbb316
         screen.blit(text_surface, (x_pos, y_pos))  # 🖥️ Display X mark
 
-    # Track if warning sound has already played
-    warning_sound_play = False  # Define outside function
-
-    # 🔊 Play warning sound only once when attempts drop to 1
-    if attempts == 1 and not warning_sound_play:
-        warning_sound.play()
-        warning_sound_play = True  # Prevent multiple plays
-    elif attempts > 1:
-        warning_sound_play = False  # Reset flag if attempts increase
-
 # 🔵 Function to draw level indicators
 def draw_levels(level):
     if not game_started or game_over:
@@ -207,10 +345,10 @@ def draw_levels(level):
     radius = 8  
     spacing = 5  
 
-    for i in range(10):  
-        row = i % 5  
-        col = i // 5  
-        color = ORANGE if i < level else GRAY  
+    for i in range(10):
+        row = i % 5
+        col = i // 5
+        color = ORANGE if i < level else GRAY
         
         x_pos = x_start + col * (radius * 2 + spacing)  
         y_pos = y_start + row * (radius * 2 + spacing)  
@@ -218,11 +356,20 @@ def draw_levels(level):
         pygame.draw.circle(screen, color, (x_pos, y_pos), radius)
         pygame.draw.circle(screen, BLACK, (x_pos, y_pos), radius, 2)
 
+def show_word_flash(screen, word, color, font):
+    screen.fill((255, 255, 255))  # White background
+    text_surface = font.render(word.upper(), True, color)  # Render word in uppercase
+    text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))  # Centered position
+    screen.blit(text_surface, text_rect)  # Draw text on the screen
+    pygame.display.update()
+    pygame.time.delay(1500)  # Pause for 1.5 seconds
+
+
 # 🎮 Main game function
 def play_hangman():
-    global game_started, game_over # Game state variables
-    level = 1  # Start at level 1
-    word = get_word()  # Pick a random word
+    global game_started, game_over, level_completed, difficulty_selected, selected_difficulty, selected_word, shuffled_words
+    
+    level = 0  # Start at level 1
     guessed_letters = set()  # Store guessed letters
     attempts = 4  # Maximum incorrect guesses
     keys = create_virtual_keyboard()  # Generate virtual keyboard
@@ -231,83 +378,122 @@ def play_hangman():
     while running:
         screen.fill(WHITE)  # Reset screen
 
-        # 🔘 Draw game controls (buttons)
-        draw_game_controls()
+        # Draw appropriate UI based on the game state
+        if not game_started:
+            draw_game_controls()  # Draw Play button
+        elif game_started and not difficulty_selected:
+            draw_difficulty_buttons()  # Draw difficulty selection buttons
+        elif game_over:
+            main_button_rect, quit_button_rect = draw_game_controls()  # Draw Play Again and Quit buttons
+        elif level_completed:  # If level 10 is completed, show the congratulations message
+            main_button_rect, quit_button_rect = draw_game_controls()  # Draw congratulations and quit button
+        else:
+            draw_game_controls()  # Draw game controls
+            draw_word(selected_word, guessed_letters)  # Display word
+            draw_virtual_keyboard(keys, guessed_letters)  # Draw virtual keyboard
+            draw_attempts(attempts)  # Show remaining attempts
+            draw_levels(level)  # Show level progress
 
-        # 🔤 Display word as rectangles
-        draw_word(word, guessed_letters)
-
-        # 🔘 Draw the virtual keyboard
-        draw_virtual_keyboard(keys, guessed_letters)
-
-        # 🔢 Draw attempt indicators
-        draw_attempts(attempts)
-        draw_levels(level)  # Draw level indicators
-
-        # 🔄 Update screen
         pygame.display.flip()
-
-        pygame.time.delay(100)  # Delay for smoother animation
-
-        # # 🚨 If game over, show "Play Again" button
-        play_again_button = draw_game_controls()  # Get button rectangle
+        pygame.time.delay(100)  # Smooth animation delay
 
         # 🎭 Handle events
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:  # Exit game
-                running = False
-
-            elif event.type == pygame.MOUSEBUTTONDOWN:  # Detect mouse clicks
-                mouse_pos = pygame.mouse.get_pos()  # Get mouse position 
+            if event.type == pygame.QUIT:
+                running = False  # Quit game
             
-                # 🎮 Handle Play Again button click (Only when game is over)
-                if game_over and play_again_button.collidepoint(mouse_pos):
-                    game_over = False # Reset game state
-                    level = 1 # Reset level
-                    word = get_word() # Get a new word
-                    guessed_letters.clear() # Clear guessed letters
-                    attempts = 4 # Reset attempts
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
 
-                # 🖱️ Handle virtual keyboard clicks
-                elif not game_over:  # Only if game is active
+                if not game_started:  # Game hasn't started, handle Play or Difficulty selection
+                    handle_button_click(mouse_pos)  # Start game or handle difficulty selection
+                
+                elif game_over:  # If game is over, handle Play Again button and Quit button
+                    main_button_rect, quit_button_rect = draw_game_controls()  # Draw buttons
+                    if main_button_rect.collidepoint(mouse_pos):  # Play Again button clicked
+                        game_over = False
+                        level = 0  # Reset level when restarting the game
+                        difficulty_selected = False  # Reset difficulty
+                        guessed_letters.clear()
+                        attempts = 4
+                        selected_word = get_word(selected_difficulty)  # New word after Play Again
+                    elif quit_button_rect.collidepoint(mouse_pos):  # Quit button clicked
+                        pygame.quit()
+                        sys.exit()
+                    else:
+                        handle_button_click(mouse_pos)  # Difficulty button clicked
+
+                elif level_completed:  # If the player completed level 10, handle button click
+                    main_button_rect, quit_button_rect = draw_game_controls()  # Draw buttons
+                    if main_button_rect.collidepoint(mouse_pos):  # Play Again button clicked
+                        level_completed = False  # Reset level completion
+                        level = 0  # Reset level when restarting the game
+                        guessed_letters.clear()
+                        attempts = 4
+                        selected_word = get_word(selected_difficulty)  # New word after Play Again
+                    elif quit_button_rect.collidepoint(mouse_pos):  # Quit button clicked
+                        pygame.quit()
+                        sys.exit()
+                    else:
+                        handle_button_click(mouse_pos)  # Difficulty button clicked
+
+                elif not game_over:  # Handle in-game clicks
                     for letter, rect in keys.items():
-                        if rect.collidepoint(mouse_pos): # If clicked on a key
+                        if rect.collidepoint(mouse_pos):
                             if letter not in guessed_letters:
-                                guessed_letters.add(letter) # Mark as guessed
-                                if letter in word:
+                                guessed_letters.add(letter)
+                                if letter in selected_word['word']: ## Check if letter is in the word
                                     correct_sound.play()
-                                else:
-                                    attempts -= 1 # Wrong guess
-                                    wrong_sound.play() # Play wrong sound
 
-                # 🎮 Handle other button clicks
+                                    if all(l in guessed_letters for l in selected_word['word']):
+                                        show_word_flash(screen, selected_word['word'], (0, 255, 0), FONT)  # Show word flash in green
+                                        pygame.time.delay(500)  # Small delay before switching
+                                        level += 1  # Move to the next level only after winning
+                                        guessed_letters.clear()  # Reset guessed letters
+                                        attempts = 4  # Reset attempts
+                                        selected_word = get_word(selected_difficulty)
+                                        
+                                        # Check if level has reached 10 to trigger game over
+                                        if level == 10:
+                                            level_completed = True  # Game over after Level 10
+                                            break
+                                else:
+                                    attempts -= 1
+                                    wrong_sound.play()
+
+                # Handle difficulty buttons after game over or before the game starts
                 handle_button_click(event.pos)
 
-            elif event.type == pygame.KEYDOWN:  # Detect physical keyboard input
-                guess = event.unicode.upper()  # Convert to uppercase
-                if guess in keys and guess not in guessed_letters:  # Valid letter
-                    guessed_letters.add(guess)  # Mark as guessed
-                    if guess in word:
-                        correct_sound.play()  # ✅ Play correct sound
+            elif event.type == pygame.KEYDOWN:
+                guess = event.unicode.upper()
+                if guess in keys and guess not in guessed_letters:
+                    guessed_letters.add(guess)
+                    if guess in selected_word['word']:  # Check against the word part of selected_word
+                        correct_sound.play()
                     else:
-                        attempts -= 1  # ❌ Wrong guess
-                        wrong_sound.play()  # 🔊 Play wrong sound
+                        attempts -= 1
+                        wrong_sound.play()
 
             # 🏆 Check win condition
-            if not game_over and all(letter in guessed_letters for letter in word):
+            if difficulty_selected and not game_over and all(letter in guessed_letters for letter in selected_word['word']):
+                show_word_flash(screen, selected_word['word'], (0, 255, 0), FONT)
+                pygame.time.delay(500)
                 if level < 10:
                     level += 1  
-                    word = get_word()  
+                    selected_word = get_word(selected_difficulty)  # Get new word
                     guessed_letters.clear()  
                     attempts = 4  
                 else:
-                    game_over = True  # 🚨 Game over after Level 10! 
-
-            # ☠️ Check loss condition
+                    level_completed = True
+                    break
+            
+            # Check loss condition
             if not game_over and attempts == 0:
-                game_over = True  # 🚨 Game over when attempts run out!
+                show_word_flash(screen, selected_word['word'], (255, 0, 0), FONT)
+                pygame.time.delay(500)
+                game_over = True
 
-    pygame.quit()  # Quit Pygame after game ends
+    pygame.quit()
 
 # 🚀 Run the game
 if __name__ == "__main__":
