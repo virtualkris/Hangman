@@ -41,36 +41,59 @@ words_by_difficulty = {
         {"word": "PANTHER", "clue": "A big cat found in the Americas, known for its stealthy hunting skills."},
         {"word": "CROCODILE", "clue": "A large reptile that lives in rivers and is known for its sharp teeth and strong jaws."},
         {"word": "TORTOISE", "clue": "A slow-moving land reptile with a hard shell that protects its body."},
+        {"word": "SPIDER", "clue": "An arachnid with eight legs, known for spinning webs."},
+        {"word": "FROG", "clue": "An amphibian known for its jumping ability and croaking sound."},
+        {"word": "CAT", "clue": "A small domesticated carnivorous mammal with retractable claws."},
+        {"word": "BUTTERFLY", "clue": "A colorful insect with delicate wings that goes through metamorphosis."},
+        {"word": "HUSKY", "clue": "A strong, thick-coated dog breed known for pulling sleds in snowy regions."}
     ],
+    
     "Normal": [
-        {"word": "NETWORK", "clue": "A group of interconnected computers that share resources."},
-        {"word": "CODING", "clue": "The process of writing instructions for a computer to follow."},
-        {"word": "DATABASE", "clue": "An organized collection of data, typically stored and accessed electronically."},
-        {"word": "SECURITY", "clue": "Measures taken to protect against unauthorized access or attacks."},
-        {"word": "ALGORITHM", "clue": "A set of rules or steps followed to solve a problem or complete a task."},
+        {"word": "BLUE", "clue": "From the album *Blue* by Yung Kai"},
+        {"word": "ENCHANTED", "clue": "From the album *Speak Now* by Taylor Swift"},
+        {"word": "TREASURE", "clue": "From the album *Unorthodox Jukebox* by Bruno Mars"},
+        {"word": "PHOTOGRAPH", "clue": "From the album *x (Multiply)* by Ed Sheeran"},
+        {"word": "JUDAS", "clue": "From the album *Born This Way* by Lady Gaga"},
+        {"word": "ROAR", "clue": "From the album *Prism* by Katy Perry"},
+        {"word": "GRENADE", "clue": "From the album *Doo-Wops & Hooligans* by Bruno Mars"},
+        {"word": "CHANDELIER", "clue": "From the album *1000 Forms of Fear* by Sia"},
+        {"word": "HELLO", "clue": "From the album *25* by Adele"},
+        {"word": "PERFECT", "clue": "From the album *÷ (Divide)* by Ed Sheeran"},
     ],
+
     "Medium": [
-        {"word": "MOTION", "clue": "The action or process of moving or being moved."},
-        {"word": "RENDER", "clue": "The process of generating an image from a model, often used in 3D graphics."},
-        {"word": "LIGHTING", "clue": "The arrangement or effect of light in a space or scene."},
-        {"word": "GRAPHICS", "clue": "Visual images or designs, often used in digital media."},
-        {"word": "FRAMERATE", "clue": "The frequency at which frames are displayed in a video or animation."},
+        {"word": "EIFFEL", "clue": "Paris icon"},
+        {"word": "PYRAMID", "clue": "Egypt tomb"},
+        {"word": "COLOSSEUM", "clue": "Rome arena"},
+        {"word": "ACROPOLIS", "clue": "Greek hilltop"},
+        {"word": "SYDNEY", "clue": "Opera house"},
+        {"word": "STONEHENGE", "clue": "Ancient rocks"},
+        {"word": "PETRA", "clue": "Jordan ruins"},
+        {"word": "SPHINX", "clue": "Egypt guardian"},
+        {"word": "ANGKOR", "clue": "Cambodia temple"},
+        {"word": "ALHAMBRA", "clue": "Spanish palace"},
     ],
+    
     "Hard": [
-        {"word": "JAVASCRIPT", "clue": "A programming language commonly used for web development."},
-        {"word": "PYTHON", "clue": "A high-level programming language known for its readability and simplicity."},
-        {"word": "PROGRAMMER", "clue": "A person who writes and tests computer programs."},
-        {"word": "DEBUGGING", "clue": "The process of identifying and fixing bugs or issues in a computer program."},
-        {"word": "FRAMEWORK", "clue": "A platform for building software applications, providing a foundation for development."},
+        {"word": "RENAISSANCE", "clue": "Rebirth"},
+        {"word": "REVOLUTION", "clue": "Uprising"},
+        {"word": "IMPERIALISM", "clue": "Colonial"},
+        {"word": "GENOCIDE", "clue": "Massacre"},
+        {"word": "CRUSADE", "clue": "Holy"},
+        {"word": "FASCISM", "clue": "Dictator"},
+        {"word": "ARMISTICE", "clue": "Truce"},
+        {"word": "TREATY", "clue": "Agreement"},
+        {"word": "FEUDALISM", "clue": "Hierarchy"},
+        {"word": "ENLIGHTENMENT", "clue": "Reason"},
     ]
 }
 
 # 🏷️ Category Names per Difficulty
 category_by_difficulty = {
     "Easy": "Animal Kingdom",
-    "Normal": "Information Technology",
-    "Medium": "3D Animation & Rendering",
-    "Hard": "Programming & Development"
+    "Normal": "Song Titles",
+    "Medium": "World Landmarks",
+    "Hard": "History"
 }
 
 # Game variables
@@ -86,9 +109,9 @@ selected_difficulty = "" # Selected difficulty
 shuffled_words = []  # List of non-repeating words per game
 
 # Load Sounds
-correct_sound = pygame.mixer.Sound("correct.mp3")
-wrong_sound = pygame.mixer.Sound("wrong-2.mp3")
-warning_sound = pygame.mixer.Sound("warning.mp3")
+correct_sound = pygame.mixer.Sound("assets/sounds/correct.mp3")
+wrong_sound = pygame.mixer.Sound("assets/sounds/wrong-2.mp3")
+warning_sound = pygame.mixer.Sound("assets/sounds/warning.mp3")
 
 # 🎮 Draw Play and Play Again buttons
 def draw_game_controls():
