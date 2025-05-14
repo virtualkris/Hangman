@@ -1,6 +1,11 @@
 import pygame  # Import pygame for UI
 import random  # Import random for word selection
 import sys
+import json  # Import json for data handling
+import os  # Import os for file handling
+import time  # Import time for delays
+from datetime import datetime  # Import datetime for timestamping
+from PIL import Image, ImageSequence  # Import Image for GIF handling
 
 # Initialize Pygame
 pygame.init()
@@ -28,10 +33,13 @@ LETTER_FONT = pygame.font.Font(None, 50)  # Font for letter display
 CATEGORY_FONT = pygame.font.SysFont(None, 28)  # Smaller size than LETTER_FONT
 CLUE_FONT = pygame.font.SysFont(None, 15)  # Smaller font size for the clue
 
+# Constants
+max_width, max_height = WIDTH, HEIGHT
+PLAYER_DATA_FILE = "data/player.json"  # File to store player data
 
 # 🖥️ Create screen
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Hangman Game")
+pygame.display.set_caption("Spellout Game")
 
 # 📜 Word Lists by Difficulty with Clues
 words_by_difficulty = {
@@ -112,6 +120,192 @@ shuffled_words = []  # List of non-repeating words per game
 correct_sound = pygame.mixer.Sound("assets/sounds/correct.mp3")
 wrong_sound = pygame.mixer.Sound("assets/sounds/wrong-2.mp3")
 warning_sound = pygame.mixer.Sound("assets/sounds/warning.mp3")
+
+# Random name generator
+def generate_random_name():
+    adjectives = ["Brave", "Clever", "Happy", "Zany", "Jolly", "Lucky"]
+    animals = ["Tiger", "Eagle", "Penguin", "Fox", "Panda", "Otter"]
+    return f"{random.choice(adjectives)}{random.choice(animals)}"
+
+# Load all player data
+def load_player_data():
+    if os.path.exists(PLAYER_DATA_FILE):
+        with open(PLAYER_DATA_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+# Save all player data
+def save_player_data(data):
+    os.makedirs(os.path.dirname(PLAYER_DATA_FILE), exist_ok=True)
+    print(f"[DEBUG] Saving data to {PLAYER_DATA_FILE}")
+    with open(PLAYER_DATA_FILE, 'w') as f:
+        json.dump(data, f, indent=4)
+
+# Update a specific player's record
+def update_player_record(uid, duration, level):
+    data = load_player_data()
+    prev = data.get(uid, {})
+    
+    # Save only if it's a new high level or faster at same level
+    if ("level" not in prev or level > prev["level"]) or \
+       (level == prev.get("level", 0) and duration < prev.get("duration", float('inf'))):
+        data[uid] = {
+            "level": level,
+            "duration": round(duration, 2),
+            "last_played": datetime.now().isoformat()
+        }
+        save_player_data(data)
+
+def load_and_resize_gif(gif_path):
+    image = Image.open(gif_path)
+    gif_width, gif_height = image.size
+
+    # Maintain aspect ratio
+    aspect_ratio = gif_width / gif_height
+    new_width = max_width
+    new_height = int(new_width / aspect_ratio)
+
+    if new_height > max_height:
+        new_height = max_height
+        new_width = int(new_height * aspect_ratio)
+
+    # Resize all frames
+    frames = [
+        pygame.image.fromstring(
+            frame.resize((new_width, new_height)).tobytes(), 
+            (new_width, new_height), 
+            frame.mode
+        )
+        for frame in ImageSequence.Iterator(image)
+    ]
+    return frames
+
+# Load both GIFs
+welcome_frames = load_and_resize_gif('assets/images/welcome.gif')
+uid_frames = load_and_resize_gif('assets/images/welcome2.gif')  # Replace with actual path
+
+# Define the welcome screen function
+def welcome_screen():
+    running = True
+    clock = pygame.time.Clock()
+    frame_index = 0
+    total_frames = len(welcome_frames)
+
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:  # Start game when 'Enter' is pressed
+                    running = False  # Exit the welcome screen
+
+        # Clear the screen
+        screen.fill((255, 255, 255))
+
+        # Display the GIF (it will animate automatically)
+        screen.blit(welcome_frames[frame_index], (0, 0))
+
+        # Update the display
+        pygame.display.flip()
+
+        # Increment the frame index for animation
+        frame_index = (frame_index + 1) % total_frames
+
+        # Control frame rate (FPS)
+        clock.tick(15)  # Set FPS for smooth animation
+
+    # After the welcome screen, get the player UID from the UID screen
+    uid_input = uid_screen()  # This will collect the player's UID
+
+    # Once the UID is collected, proceed to the game
+    play_spellout(uid_input)  # Start the game with the UID input
+
+# Define the UID screen function
+def uid_screen():
+    running = True
+    clock = pygame.time.Clock()
+    frame_index = 0
+    total_frames = len(uid_frames)
+
+    uid_input = ""
+    input_active = False
+    font = pygame.font.Font(None, 40)
+    input_box = pygame.Rect(WIDTH // 2 - 150, HEIGHT // 2 + 10, 300, 50)
+    color_inactive = pygame.Color('lightskyblue3')
+    color_active = pygame.Color('dodgerblue2')
+    color = color_inactive
+
+    # Random name button
+    button_font = pygame.font.Font(None, 32)
+    random_button = pygame.Rect(WIDTH // 2 - 75, HEIGHT // 2 + 85, 150, 40)
+
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if input_box.collidepoint(event.pos):
+                    input_active = True
+                    color = color_active
+                elif random_button.collidepoint(event.pos):
+                    uid_input = generate_random_name()
+                else:
+                    input_active = False
+                    color = color_inactive
+            elif event.type == pygame.KEYDOWN:
+                if input_active:
+                    if event.key == pygame.K_RETURN and uid_input.strip() != "":  # When ENTER is pressed
+                        print(f"Player UID: {uid_input}")  # Print or store UID
+                        # Initialize player data with default level 0 and duration 0
+                        update_player_record(uid_input, duration=0, level=0)  
+                        running = False
+                    elif event.key == pygame.K_BACKSPACE:
+                        uid_input = uid_input[:-1]
+                    else:
+                        uid_input += event.unicode
+
+        # 🔄 Background animation
+        screen.fill((255, 255, 255))
+        screen.blit(uid_frames[frame_index], (0, 0))
+        frame_index = (frame_index + 1) % total_frames
+
+        # 🖊️ Draw label above input box
+        label_font = pygame.font.Font(None, 25)
+        label_surface = label_font.render("Enter player name", True, GRAY)
+        label_rect = label_surface.get_rect(center=(WIDTH // 2, input_box.y - 20))
+        screen.blit(label_surface, label_rect)
+
+        # ✏️ Draw input box
+        pygame.draw.rect(screen, color, input_box, 2)
+        text_surface = font.render(uid_input, True, (0, 0, 0))
+        screen.blit(text_surface, (input_box.x + 10, input_box.y + 10))
+
+        # ⬇️ Draw "or" below input box
+        or_surface = label_font.render("or", True, GRAY)
+        or_rect = or_surface.get_rect(center=(WIDTH // 2, input_box.y + 60))
+        screen.blit(or_surface, or_rect)
+
+        # 🎲 Draw random name button
+        pygame.draw.rect(screen, (100, 200, 255), random_button, border_radius=8)
+        button_text = button_font.render("Random", True, (0, 0, 0))
+        text_rect = button_text.get_rect(center=(
+            random_button.x + random_button.width // 2,
+            random_button.y + random_button.height // 2
+        ))
+        screen.blit(button_text, text_rect)
+
+        pygame.display.flip()
+        clock.tick(15)
+
+    # Move to the game after UID is submitted
+    play_spellout(uid_input)
+
+# Function to get rankings
+def get_rankings():
+    data = load_player_data()
+    # Sort by level DESC, then duration ASC
+    return sorted(data.items(), key=lambda x: (-x[1]['level'], x[1]['duration']))
 
 # 🎮 Draw Play and Play Again buttons
 def draw_game_controls():
@@ -379,6 +573,7 @@ def draw_levels(level):
         pygame.draw.circle(screen, color, (x_pos, y_pos), radius)
         pygame.draw.circle(screen, BLACK, (x_pos, y_pos), radius, 2)
 
+# 🔤 Function to show the word flash
 def show_word_flash(screen, word, color, font):
     screen.fill((255, 255, 255))  # White background
     text_surface = font.render(word.upper(), True, color)  # Render word in uppercase
@@ -387,11 +582,17 @@ def show_word_flash(screen, word, color, font):
     pygame.display.update()
     pygame.time.delay(1500)  # Pause for 1.5 seconds
 
+# Sorting function for rankings
+def get_rankings():
+    data = load_player_data()
+    # Sort by level DESC, then duration ASC
+    return sorted(data.items(), key=lambda x: (-x[1]['level'], x[1]['duration']))
 
 # 🎮 Main game function
-def play_hangman():
+def play_spellout(uid_input):
     global game_started, game_over, level_completed, difficulty_selected, selected_difficulty, selected_word, shuffled_words
     
+    start_time = time.time()  # Start time for duration calculation
     level = 0  # Start at level 1
     guessed_letters = set()  # Store guessed letters
     attempts = 4  # Maximum incorrect guesses
@@ -508,6 +709,12 @@ def play_hangman():
                     attempts = 4  
                 else:
                     level_completed = True
+                    end_time = time.time()  # End time for duration calculation
+                    duration = end_time - start_time  # Calculate duration
+
+                    # Debugging logs before saving
+                    print(f"Player UID: {uid_input}, Duration: {duration}, Level: {level}")
+                    update_player_record(uid_input, duration, level)  # Update player record
                     break
             
             # Check loss condition
@@ -515,9 +722,15 @@ def play_hangman():
                 show_word_flash(screen, selected_word['word'], (255, 0, 0), FONT)
                 pygame.time.delay(500)
                 game_over = True
+                end_time = time.time()  # End time for duration calculation
+                duration = end_time - start_time  # Calculate duration
+
+                # Debugging logs before saving
+                print(f"Player UID: {uid_input}, Duration: {duration}, Level: {level}")
+                update_player_record(uid_input, duration, level)  # Update player record
 
     pygame.quit()
 
 # 🚀 Run the game
 if __name__ == "__main__":
-    play_hangman()
+    welcome_screen()
