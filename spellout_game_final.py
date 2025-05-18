@@ -41,67 +41,68 @@ PLAYER_DATA_FILE = "data/player.json"  # File to store player data
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Spellout Game")
 
-# 📜 Word Lists by Difficulty with Clues
-words_by_difficulty = {
-    "Easy": [
-        {"word": "HUMAN", "clue": "A bipedal primate species, known for its intelligence and ability to create complex tools."},
-        {"word": "EAGLE", "clue": "A large bird of prey, known for its keen eyesight and powerful flight."},
-        {"word": "PANTHER", "clue": "A big cat found in the Americas, known for its stealthy hunting skills."},
-        {"word": "CROCODILE", "clue": "A large reptile that lives in rivers and is known for its sharp teeth and strong jaws."},
-        {"word": "TORTOISE", "clue": "A slow-moving land reptile with a hard shell that protects its body."},
-        {"word": "SPIDER", "clue": "An arachnid with eight legs, known for spinning webs."},
-        {"word": "FROG", "clue": "An amphibian known for its jumping ability and croaking sound."},
+# 📜 Word Lists by Tier with Clues
+words_by_tier = {
+    "Easy": [  # Levels 1-5
         {"word": "CAT", "clue": "A small domesticated carnivorous mammal with retractable claws."},
-        {"word": "BUTTERFLY", "clue": "A colorful insect with delicate wings that goes through metamorphosis."},
-        {"word": "HUSKY", "clue": "A strong, thick-coated dog breed known for pulling sleds in snowy regions."}
+        {"word": "FROG", "clue": "An amphibian known for its jumping ability and croaking sound."},
+        {"word": "SPIDER", "clue": "An arachnid with eight legs, known for spinning webs."},
+        {"word": "EAGLE", "clue": "A large bird of prey, known for its keen eyesight and powerful flight."},
+        {"word": "HUMAN", "clue": "A bipedal primate species, known for its intelligence and ability to create complex tools."}
     ],
-    
-    "Normal": [
-        {"word": "BLUE", "clue": "From the album *Blue* by Yung Kai"},
-        {"word": "ENCHANTED", "clue": "From the album *Speak Now* by Taylor Swift"},
-        {"word": "TREASURE", "clue": "From the album *Unorthodox Jukebox* by Bruno Mars"},
-        {"word": "PHOTOGRAPH", "clue": "From the album *x (Multiply)* by Ed Sheeran"},
-        {"word": "JUDAS", "clue": "From the album *Born This Way* by Lady Gaga"},
-        {"word": "ROAR", "clue": "From the album *Prism* by Katy Perry"},
-        {"word": "GRENADE", "clue": "From the album *Doo-Wops & Hooligans* by Bruno Mars"},
-        {"word": "CHANDELIER", "clue": "From the album *1000 Forms of Fear* by Sia"},
+    "Normal": [  # Levels 6-10
         {"word": "HELLO", "clue": "From the album *25* by Adele"},
-        {"word": "PERFECT", "clue": "From the album *÷ (Divide)* by Ed Sheeran"},
+        {"word": "ROAR", "clue": "From the album *Prism* by Katy Perry"},
+        {"word": "BLUE", "clue": "From the album *Blue* by Yung Kai"},
+        {"word": "JUDAS", "clue": "From the album *Born This Way* by Lady Gaga"},
+        {"word": "PERFECT", "clue": "From the album *÷ (Divide)* by Ed Sheeran"}
     ],
-
-    "Medium": [
-        {"word": "EIFFEL", "clue": "Paris icon"},
-        {"word": "PYRAMID", "clue": "Egypt tomb"},
-        {"word": "COLOSSEUM", "clue": "Rome arena"},
-        {"word": "ACROPOLIS", "clue": "Greek hilltop"},
-        {"word": "SYDNEY", "clue": "Opera house"},
-        {"word": "STONEHENGE", "clue": "Ancient rocks"},
-        {"word": "PETRA", "clue": "Jordan ruins"},
-        {"word": "SPHINX", "clue": "Egypt guardian"},
-        {"word": "ANGKOR", "clue": "Cambodia temple"},
-        {"word": "ALHAMBRA", "clue": "Spanish palace"},
-    ],
-    
-    "Hard": [
-        {"word": "RENAISSANCE", "clue": "Rebirth"},
-        {"word": "REVOLUTION", "clue": "Uprising"},
-        {"word": "IMPERIALISM", "clue": "Colonial"},
+    "Hard": [  # Levels 11-15
         {"word": "GENOCIDE", "clue": "Massacre"},
         {"word": "CRUSADE", "clue": "Holy"},
         {"word": "FASCISM", "clue": "Dictator"},
-        {"word": "ARMISTICE", "clue": "Truce"},
         {"word": "TREATY", "clue": "Agreement"},
-        {"word": "FEUDALISM", "clue": "Hierarchy"},
-        {"word": "ENLIGHTENMENT", "clue": "Reason"},
+        {"word": "ENLIGHTENMENT", "clue": "Reason"}
     ]
 }
 
-# 🏷️ Category Names per Difficulty
-category_by_difficulty = {
+# 🏷️ Category Names per Tier
+category_by_tier = {
     "Easy": "Animal Kingdom",
     "Normal": "Song Titles",
-    "Medium": "World Landmarks",
     "Hard": "History"
+}
+
+# Time limits for each tier (in seconds)
+time_limits = {
+    "Easy": 15,    # 15 seconds per word
+    "Normal": 30,  # 30 seconds per word
+    "Hard": 60     # 60 seconds per word
+}
+
+# Background colors for each tier (from light to dark)
+tier_colors = {
+    "Easy": [
+        (200, 255, 200),  # Lightest green
+        (180, 255, 180),
+        (160, 255, 160),
+        (140, 255, 140),
+        (120, 255, 120)   # Darkest green
+    ],
+    "Normal": [
+        (255, 230, 200),  # Lightest orange
+        (255, 220, 180),
+        (255, 210, 160),
+        (255, 200, 140),
+        (255, 190, 120)   # Darkest orange
+    ],
+    "Hard": [
+        (255, 200, 200),  # Lightest red
+        (255, 180, 180),
+        (255, 160, 160),
+        (255, 140, 140),
+        (255, 120, 120)   # Darkest red
+    ]
 }
 
 # Game variables
@@ -115,6 +116,13 @@ guessed_letters = set() # Set to store guessed letters
 selected_word = "" # Word to guess
 selected_difficulty = "" # Selected difficulty
 shuffled_words = []  # List of non-repeating words per game
+game_mode = "classic"  # Game mode (classic or timed)
+word_timer = 0  # Timer for timed mode
+word_start_time = 0  # Start time for current word
+
+# Separate leaderboards for classic and timed modes
+CLASSIC_LEADERBOARD_FILE = "data/classic_leaderboard.json"
+TIMED_LEADERBOARD_FILE = "data/timed_leaderboard.json"
 
 # Load Sounds
 correct_sound = pygame.mixer.Sound("assets/sounds/correct.mp3")
@@ -142,19 +150,68 @@ def save_player_data(data):
         json.dump(data, f, indent=4)
 
 # Update a specific player's record
-def update_player_record(uid, duration, level):
-    data = load_player_data()
-    prev = data.get(uid, {})
+def update_player_record(uid, duration, level, game_mode):
+    # Only update records for the current game mode
+    leaderboard_file = TIMED_LEADERBOARD_FILE if game_mode == "timed" else CLASSIC_LEADERBOARD_FILE
     
-    # Save only if it's a new high level or faster at same level
-    if ("level" not in prev or level > prev["level"]) or \
-       (level == prev.get("level", 0) and duration < prev.get("duration", float('inf'))):
-        data[uid] = {
+    try:
+        # Load existing data for the current mode only
+        data = {}
+        if os.path.exists(leaderboard_file):
+            with open(leaderboard_file, 'r') as f:
+                data = json.load(f)
+
+        # Calculate stars based on game mode
+        if game_mode == "timed":
+            # For timed mode, count correctly guessed words
+            correct_words = level  # level represents correctly guessed words
+            stars = 0
+            if correct_words >= 10:
+                stars = 3
+            elif correct_words >= 7:
+                stars = 2
+            elif correct_words >= 3:
+                stars = 1
+        else:
+            # Classic mode - stars based on levels completed
+            stars = 3 if level >= 10 else (2 if level >= 7 else (1 if level >= 3 else 0))
+
+        # Create new record
+        new_record = {
             "level": level,
             "duration": round(duration, 2),
+            "stars": stars,
             "last_played": datetime.now().isoformat()
         }
-        save_player_data(data)
+
+        # Initialize player data if not exists
+        if uid not in data:
+            data[uid] = {"last_record": {}, "best_record": {}}
+
+        # Update last_record
+        data[uid]["last_record"] = new_record.copy()
+
+        # Update best_record only if it's a better performance
+        current_best = data[uid].get("best_record", {})
+        if (not current_best or
+            level > current_best.get("level", 0) or
+            (level == current_best.get("level", 0) and
+             duration < current_best.get("duration", float('inf')))):
+            data[uid]["best_record"] = new_record.copy()
+
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(leaderboard_file), exist_ok=True)
+        
+        # Save the data
+        with open(leaderboard_file, 'w') as f:
+            json.dump(data, f, indent=4)
+
+        print(f"[DEBUG] Successfully updated {game_mode} leaderboard for player {uid}")
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to update player record: {str(e)}")
+        # Optionally, create the directory if it doesn't exist
+        os.makedirs(os.path.dirname(leaderboard_file), exist_ok=True)
 
 # Load and resize GIFs
 def load_and_resize_gif(gif_path):
@@ -184,6 +241,63 @@ def load_and_resize_gif(gif_path):
 # Load both GIFs
 welcome_frames = load_and_resize_gif('assets/images/welcome.gif')
 uid_frames = load_and_resize_gif('assets/images/welcome2.gif')  # Replace with actual path
+
+# Function to show the game manual
+def show_game_manual():
+    manual_running = True
+    clock = pygame.time.Clock()
+
+    title_font = pygame.font.Font(None, 30)
+    text_font = pygame.font.Font(None, 20)
+
+    title = title_font.render("Game Manual", True, BLACK)
+
+    # Load icons
+    icon_paths = [
+        "objective.png", "keyboard.png", "lives.png", "goal.png",
+        "gamepad.png", "wrong.png", "trophy.png", "pause.png", "back.png"
+    ]
+    icon_images = [pygame.image.load(f"assets/icons/{img}").convert_alpha() for img in icon_paths]
+
+    # Instructions (text without emojis now)
+    instructions = [
+        "Objective: Guess the hidden word one letter at a time.",
+        "Click letters or use your keyboard to guess.",
+        "You get 4 attempts per word.",
+        "Complete 10 levels to finish the game.",
+        "Click 'Random' for a surprise name.",
+        "Wrong guesses reduce your attempts.",
+        "Leaderboard tracks your level & time.",
+        "Press ESC during the game to pause/resume.",
+        "Press ESC now to return to the previous screen."
+    ]
+
+    while manual_running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                manual_running = False
+
+        screen.fill((220, 220, 255))
+        manual_surface = pygame.Surface((WIDTH - 100, HEIGHT - 100))
+        manual_surface.fill((255, 255, 255))
+        pygame.draw.rect(manual_surface, BLACK, manual_surface.get_rect(), 3)
+
+        manual_surface.blit(title, (manual_surface.get_width() // 2 - title.get_width() // 2, 20))
+
+        # Draw each instruction with its corresponding icon
+        for i, (icon, line) in enumerate(zip(icon_images, instructions)):
+            y_pos = 60 + i * 30
+            icon = pygame.transform.scale(icon, (24, 24))
+            manual_surface.blit(icon, (25, y_pos))
+            text = text_font.render(line, True, (0, 0, 0))
+            manual_surface.blit(text, (60, y_pos))  # Position text after the icon
+
+        screen.blit(manual_surface, (50, 50))
+        pygame.display.flip()
+        clock.tick(30)
 
 # Define the welcome screen function
 def welcome_screen():
@@ -215,7 +329,7 @@ def welcome_screen():
     # 🆕 Resume screen logic after exiting welcome screen
     resume_prompt_screen()  # NEW: Show Resume or New Game option after welcome
 
-# Define the UID screen function
+# Function to show the UID screen
 def uid_screen():
     running = True
     clock = pygame.time.Clock()
@@ -234,6 +348,9 @@ def uid_screen():
     button_font = pygame.font.Font(None, 32)
     random_button = pygame.Rect(WIDTH // 2 - 75, HEIGHT // 2 + 85, 150, 40)
 
+    # ❓ Help/manual button in lower right
+    help_button = pygame.Rect(WIDTH - 50, HEIGHT - 50, 35, 35)
+
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -243,6 +360,8 @@ def uid_screen():
                 if input_box.collidepoint(event.pos):
                     input_active = True
                     color = color_active
+                elif help_button.collidepoint(event.pos):
+                    show_game_manual()
                 elif random_button.collidepoint(event.pos):
                     uid_input = generate_random_name()
                 else:
@@ -250,38 +369,35 @@ def uid_screen():
                     color = color_inactive
             elif event.type == pygame.KEYDOWN:
                 if input_active:
-                    if event.key == pygame.K_RETURN and uid_input.strip() != "":  # When ENTER is pressed
-                        print(f"Player UID: {uid_input}")  # Print or store UID
-                        # Initialize player data with default level 0 and duration 0
-                        update_player_record(uid_input, duration=0, level=0)  
+                    if event.key == pygame.K_RETURN and uid_input.strip() != "":
+                        print(f"Player UID: {uid_input}")
                         running = False
                     elif event.key == pygame.K_BACKSPACE:
                         uid_input = uid_input[:-1]
                     else:
                         uid_input += event.unicode
 
-        # 🔄 Background animation
         screen.fill((255, 255, 255))
         screen.blit(uid_frames[frame_index], (0, 0))
         frame_index = (frame_index + 1) % total_frames
 
-        # 🖊️ Draw label above input box
+        # Draw label above input box
         label_font = pygame.font.Font(None, 25)
         label_surface = label_font.render("Enter player name", True, GRAY)
         label_rect = label_surface.get_rect(center=(WIDTH // 2, input_box.y - 20))
         screen.blit(label_surface, label_rect)
 
-        # ✏️ Draw input box
+        # Draw input box
         pygame.draw.rect(screen, color, input_box, 2)
         text_surface = font.render(uid_input, True, (0, 0, 0))
         screen.blit(text_surface, (input_box.x + 10, input_box.y + 10))
 
-        # ⬇️ Draw "or" below input box
+        # Draw "or" below input box
         or_surface = label_font.render("or", True, GRAY)
         or_rect = or_surface.get_rect(center=(WIDTH // 2, input_box.y + 60))
         screen.blit(or_surface, or_rect)
 
-        # 🎲 Draw random name button
+        # Draw random name button
         pygame.draw.rect(screen, (100, 200, 255), random_button, border_radius=8)
         button_text = button_font.render("Random", True, (0, 0, 0))
         text_rect = button_text.get_rect(center=(
@@ -289,6 +405,12 @@ def uid_screen():
             random_button.y + random_button.height // 2
         ))
         screen.blit(button_text, text_rect)
+
+        # Draw "?" help/manual button
+        pygame.draw.circle(screen, (200, 200, 200), help_button.center, 18)
+        help_font = pygame.font.Font(None, 28)
+        help_text = help_font.render("?", True, BLACK)
+        screen.blit(help_text, help_text.get_rect(center=help_button.center))
 
         pygame.display.flip()
         clock.tick(15)
@@ -367,88 +489,277 @@ def resume_prompt_screen():
                     return
 
 # Function to display the leaderboard
-def display_leaderboard():
-    player_data = load_player_data()
-    sorted_players = sorted(player_data.items(), key=lambda x: x[1]['level'], reverse=True)
+def display_leaderboard(uid_input):
+    # Load both leaderboards
+    classic_data = {}
+    timed_data = {}
+    
+    if os.path.exists(CLASSIC_LEADERBOARD_FILE):
+        with open(CLASSIC_LEADERBOARD_FILE, 'r') as f:
+            classic_data = json.load(f)
+            
+    if os.path.exists(TIMED_LEADERBOARD_FILE):
+        with open(TIMED_LEADERBOARD_FILE, 'r') as f:
+            timed_data = json.load(f)
 
-    screen.fill(WHITE)
+    # Create leaderboard surface
+    screen.fill((220, 220, 255))
+    board_surface = pygame.Surface((WIDTH - 100, HEIGHT - 100))
+    board_surface.fill((240, 240, 240))
+    pygame.draw.rect(board_surface, BLACK, board_surface.get_rect(), 3)
 
-    title_font = pygame.font.Font(None, 40)
-    title_surface = title_font.render("Leaderboard", True, BLACK)
-    screen.blit(title_surface, (WIDTH // 2 - title_surface.get_width() // 2, 30))
+    # Load icons
+    trophy_icon = pygame.image.load("assets/icons/trophy.png")
+    trophy_icon = pygame.transform.scale(trophy_icon, (30, 30))
+    
+    gold_icon = pygame.image.load("assets/icons/gold_cup.png")
+    silver_icon = pygame.image.load("assets/icons/silver_cup.png")
+    bronze_icon = pygame.image.load("assets/icons/bronze_cup.png")
+    badge_icon = pygame.image.load("assets/icons/badge.png")
+    star_icon = pygame.image.load("assets/icons/star.png")
+    star_icon = pygame.transform.scale(star_icon, (15, 15))
 
-    list_font = pygame.font.Font(None, 30)
-    y_offset = 100
+    x_icon = pygame.image.load("assets/icons/x_icon.png")
+    x_icon = pygame.transform.scale(x_icon, (25, 25))
+    x_button = pygame.Rect(WIDTH - 50, 20, 25, 25)
 
-    if sorted_players:
-        for idx, (uid, data) in enumerate(sorted_players[:10]):
-            player_info = f"{idx + 1}. {uid} - Level: {data['level']} - Duration: {data['duration']:.2f}s"
-            player_surface = list_font.render(player_info, True, BLACK)
-            screen.blit(player_surface, (WIDTH // 2 - player_surface.get_width() // 2, y_offset))
-            y_offset += 25
-    else:
-        empty_msg = list_font.render("No data available.", True, (100, 0, 0))
-        screen.blit(empty_msg, (WIDTH // 2 - empty_msg.get_width() // 2, y_offset))
+    # Title
+    title_font = pygame.font.Font(None, 36)
+    list_font = pygame.font.Font(None, 20)
+    mode_font = pygame.font.Font(None, 28)
 
-    # Back to main menu button
-    back_button = pygame.Rect(WIDTH // 2 - 75, HEIGHT - 80, 150, 40)
-    pygame.draw.rect(screen, BLUE, back_button, border_radius=8)
-    back_text = list_font.render("Back to Main", True, WHITE)
-    screen.blit(back_text, back_text.get_rect(center=back_button.center))
-
-    pygame.display.flip()
-
-    # Event loop for back button
+    # Mode selection buttons
+    classic_button = pygame.Rect(board_surface.get_width() // 4 - 50, 20, 100, 30)
+    timed_button = pygame.Rect(board_surface.get_width() * 3 // 4 - 50, 20, 100, 30)
+    
+    current_mode = "classic"  # Default mode to show
+    
     while True:
+        screen.fill((220, 220, 255))
+        board_surface.fill((240, 240, 240))
+        pygame.draw.rect(board_surface, BLACK, board_surface.get_rect(), 3)
+
+        # Draw mode buttons
+        for button, text, mode in [(classic_button, "Classic", "classic"), 
+                                 (timed_button, "Timed", "timed")]:
+            color = BLUE if mode == current_mode else GRAY
+            pygame.draw.rect(board_surface, color, button, border_radius=5)
+            text_surface = mode_font.render(text, True, WHITE if mode == current_mode else BLACK)
+            text_rect = text_surface.get_rect(center=button.center)
+            board_surface.blit(text_surface, text_rect)
+
+        # Get current leaderboard data
+        current_data = classic_data if current_mode == "classic" else timed_data
+        
+        # Extract and sort players
+        valid_players = [
+            (uid, data["best_record"])
+            for uid, data in current_data.items()
+            if "best_record" in data
+        ]
+        
+        sorted_players = sorted(
+            valid_players,
+            key=lambda x: (-x[1]["level"], x[1]["duration"])
+        )
+
+        # Find current player's rank
+        player_rank = None
+        for i, (uid, _) in enumerate(sorted_players):
+            if uid == uid_input:
+                player_rank = i + 1
+                break
+
+        y_offset = 70
+        if sorted_players:
+            for idx, (uid, record) in enumerate(sorted_players[:10]):
+                if idx == 0:
+                    icon = gold_icon
+                elif idx == 1:
+                    icon = silver_icon
+                elif idx == 2:
+                    icon = bronze_icon
+                else:
+                    icon = badge_icon
+
+                icon = pygame.transform.scale(icon, (20, 20))
+
+                level = record["level"]
+                duration = record["duration"]
+                stars = record["stars"]
+                
+                # Draw rank icon
+                board_surface.blit(icon, (30, y_offset))
+                
+                # Draw player info
+                text_color = (0, 100, 200) if uid == uid_input else BLACK
+                player_info = f"{uid} - Level: {level} - {duration:.2f}s"
+                player_surface = list_font.render(player_info, True, text_color)
+                board_surface.blit(player_surface, (65, y_offset))
+                
+                # Draw stars - moved further right
+                star_x = board_surface.get_width() - (stars * 20) - 30  # Adjusted position
+                for _ in range(stars):
+                    board_surface.blit(star_icon, (star_x, y_offset))
+                    star_x += 20
+                
+                y_offset += 25
+
+            # Show current player's rank if not in top 10
+            if player_rank and player_rank > 10:
+                y_offset += 10
+                pygame.draw.line(board_surface, GRAY, (25, y_offset), 
+                               (board_surface.get_width() - 25, y_offset), 1)
+                y_offset += 10
+
+                record = current_data[uid_input]["best_record"]
+                level = record["level"]
+                duration = record["duration"]
+                stars = record["stars"]
+                player_info = f"{player_rank}. {uid_input} - Level: {level} - {duration:.2f}s"
+                player_surface = list_font.render(player_info, True, (0, 100, 200))
+                board_surface.blit(player_surface, (30, y_offset))
+                
+                # Draw stars for current player - moved further right
+                star_x = board_surface.get_width() - (stars * 20) - 30  # Adjusted position
+                for _ in range(stars):
+                    board_surface.blit(star_icon, (star_x, y_offset))
+                    star_x += 20
+
+        else:
+            empty_msg = list_font.render("No data available.", True, (100, 0, 0))
+            board_surface.blit(empty_msg, (board_surface.get_width() // 2 - empty_msg.get_width() // 2, y_offset))
+
+        # Draw everything
+        screen.blit(board_surface, (50, 50))
+        screen.blit(x_icon, x_button.topleft)
+        pygame.display.flip()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if back_button.collidepoint(event.pos):
+                mouse_pos = event.pos
+                board_pos = (mouse_pos[0] - 50, mouse_pos[1] - 50)  # Adjust for board position
+                
+                if x_button.collidepoint(mouse_pos):
                     return
+                elif classic_button.collidepoint(board_pos):
+                    current_mode = "classic"
+                elif timed_button.collidepoint(board_pos):
+                    current_mode = "timed"
 
 # Function to show the last record of a player
 def show_last_record(uid_input):
-    player_data = load_player_data()
+    # Load both leaderboards
+    classic_data = {}
+    timed_data = {}
+    
+    if os.path.exists(CLASSIC_LEADERBOARD_FILE):
+        with open(CLASSIC_LEADERBOARD_FILE, 'r') as f:
+            classic_data = json.load(f)
+            
+    if os.path.exists(TIMED_LEADERBOARD_FILE):
+        with open(TIMED_LEADERBOARD_FILE, 'r') as f:
+            timed_data = json.load(f)
 
-    screen.fill(WHITE)
-    title_font = pygame.font.Font(None, 40)
-    info_font = pygame.font.Font(None, 30)
+    screen.fill((220, 220, 255))
 
-    title_surface = title_font.render("Your Last Record", True, BLACK)
-    screen.blit(title_surface, (WIDTH // 2 - title_surface.get_width() // 2, 30))
+    # Load icons
+    x_icon = pygame.image.load("assets/icons/x_icon.png")
+    x_icon = pygame.transform.scale(x_icon, (25, 25))
+    x_button = pygame.Rect(WIDTH - 50, 20, 25, 25)
 
-    if uid_input in player_data:
-        info = player_data[uid_input]
-        level_text = info_font.render(f"Last Level: {info['level']}", True, BLACK)
-        duration_text = info_font.render(f"Duration: {info['duration']:.2f}s", True, BLACK)
-        last_played_text = info_font.render(f"Last Played: {info['last_played']}", True, BLACK)
+    star_icon = pygame.image.load("assets/icons/star.png")
+    star_icon = pygame.transform.scale(star_icon, (30, 30))
 
-        screen.blit(level_text, (WIDTH // 2 - level_text.get_width() // 2, 100))
-        screen.blit(duration_text, (WIDTH // 2 - duration_text.get_width() // 2, 150))
-        screen.blit(last_played_text, (WIDTH // 2 - last_played_text.get_width() // 2, 200))
-    else:
-        error_msg = info_font.render("No record found for this player.", True, (200, 0, 0))
-        screen.blit(error_msg, (WIDTH // 2 - error_msg.get_width() // 2, 150))
+    # Draw border box surface
+    manual_surface = pygame.Surface((WIDTH - 100, HEIGHT - 100))
+    manual_surface.fill((240, 240, 240))
+    pygame.draw.rect(manual_surface, BLACK, manual_surface.get_rect(), 3)
 
-    # Back button
-    back_button = pygame.Rect(WIDTH // 2 - 75, HEIGHT - 80, 150, 40)
-    pygame.draw.rect(screen, BLUE, back_button, border_radius=8)
-    back_text = info_font.render("Back to Main", True, WHITE)
-    screen.blit(back_text, back_text.get_rect(center=back_button.center))
+    title_font = pygame.font.Font(None, 36)
+    info_font = pygame.font.Font(None, 26)
+    mode_font = pygame.font.Font(None, 28)
 
-    pygame.display.flip()
-
+    # Mode selection buttons
+    classic_button = pygame.Rect(manual_surface.get_width() // 4 - 50, 20, 100, 30)
+    timed_button = pygame.Rect(manual_surface.get_width() * 3 // 4 - 50, 20, 100, 30)
+    
+    current_mode = "classic"  # Default mode to show
+    
     while True:
+        screen.fill((220, 220, 255))
+        manual_surface.fill((240, 240, 240))
+        pygame.draw.rect(manual_surface, BLACK, manual_surface.get_rect(), 3)
+
+        # Draw mode buttons
+        for button, text, mode in [(classic_button, "Classic", "classic"), 
+                                 (timed_button, "Timed", "timed")]:
+            color = BLUE if mode == current_mode else GRAY
+            pygame.draw.rect(manual_surface, color, button, border_radius=5)
+            text_surface = mode_font.render(text, True, WHITE if mode == current_mode else BLACK)
+            text_rect = text_surface.get_rect(center=button.center)
+            manual_surface.blit(text_surface, text_rect)
+
+        # Get current data
+        current_data = classic_data if current_mode == "classic" else timed_data
+
+        if uid_input in current_data and "last_record" in current_data[uid_input]:
+            record = current_data[uid_input]["last_record"]
+            level = record.get('level', 0)
+            duration = record.get('duration', 0)
+            stars = record.get('stars', 0)
+            last_played = record.get('last_played', "Unknown")
+
+            # Center stars at top line
+            stars_width = stars * 30 - 6
+            star_x = (manual_surface.get_width() - stars_width) // 2
+            star_y = 60
+
+            for i in range(stars):
+                manual_surface.blit(star_icon, (star_x + i * 30, star_y))
+            
+            y_offset = 100
+            spacing = 30
+
+            level_text = info_font.render(f"Last Level: {level}", True, BLACK)
+            manual_surface.blit(level_text, (50, y_offset))
+
+            duration_text = info_font.render(f"Duration: {duration:.2f}s", True, BLACK)
+            manual_surface.blit(duration_text, (50, y_offset + spacing))
+
+            last_played_text = info_font.render(f"Last Played: {last_played}", True, BLACK)
+            manual_surface.blit(last_played_text, (50, y_offset + spacing * 2))
+
+        else:
+            error_msg = info_font.render("No record found for this player.", True, (200, 0, 0))
+            manual_surface.blit(error_msg, (manual_surface.get_width() // 2 - error_msg.get_width() // 2, 120))
+
+        # Blit manual_surface to main screen
+        screen.blit(manual_surface, (50, 50))
+
+        # Draw X (back) icon on the main screen
+        screen.blit(x_icon, x_button.topleft)
+
+        pygame.display.flip()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if back_button.collidepoint(event.pos):
-                    return
+                mouse_pos = event.pos
+                board_pos = (mouse_pos[0] - 50, mouse_pos[1] - 50)  # Adjust for board position
                 
+                if x_button.collidepoint(mouse_pos):
+                    return
+                elif classic_button.collidepoint(board_pos):
+                    current_mode = "classic"
+                elif timed_button.collidepoint(board_pos):
+                    current_mode = "timed"
+
 # 🎮 Function to draw game controls
 def draw_game_controls(player_name=None, state='start'):
     button_color = (71, 185, 112)      # Green
@@ -466,29 +777,28 @@ def draw_game_controls(player_name=None, state='start'):
     current_y = button_y + spacing
 
     font = pygame.font.Font(None, 30)
-    button_rects = [None, None, None, None]  # [main, quit, leaderboard, last_record]
+    button_rects = {"classic": None, "timed": None, "quit": None, "leaderboard": None, "last_record": None}
 
     # ✳️ STATE-SPECIFIC UI
     if state == 'start':
         text = f"Welcome {player_name}!"
-        play_text = "PLAY"
-
+        
         # Title Text
         text_surface = font.render(text, True, text_color)
         screen.blit(text_surface, text_surface.get_rect(center=(WIDTH // 2, button_y - 30)))
 
-        # PLAY button
+        # CLASSIC MODE button
         pygame.draw.rect(screen, border_color, (button_x - 4, button_y - 4, button_width + 10, button_height + 10), border_radius=10)
         pygame.draw.rect(screen, button_color, (button_x, button_y, button_width, button_height), border_radius=8)
-        play_surface = font.render(play_text, True, text_color)
-        screen.blit(play_surface, play_surface.get_rect(center=(WIDTH // 2, button_y + button_height // 2)))
-        button_rects[0] = pygame.Rect(button_x, button_y, button_width, button_height)
+        classic_surface = font.render("CLASSIC MODE", True, text_color)
+        screen.blit(classic_surface, classic_surface.get_rect(center=(WIDTH // 2, button_y + button_height // 2)))
+        button_rects["classic"] = pygame.Rect(button_x, button_y, button_width, button_height)
 
-        # LEADERBOARD button
+        # TIMED MODE button
         pygame.draw.rect(screen, leaderboard_button_color, (button_x, current_y, button_width, button_height), border_radius=8)
-        lb_surface = font.render("LEADERBOARD", True, text_color)
-        screen.blit(lb_surface, lb_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
-        button_rects[2] = pygame.Rect(button_x, current_y, button_width, button_height)
+        timed_surface = font.render("TIMED MODE", True, text_color)
+        screen.blit(timed_surface, timed_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
+        button_rects["timed"] = pygame.Rect(button_x, current_y, button_width, button_height)
 
     elif state in ('over', 'complete'):
         if state == 'over':
@@ -506,63 +816,34 @@ def draw_game_controls(player_name=None, state='start'):
         pygame.draw.rect(screen, button_color, (button_x, button_y, button_width, button_height), border_radius=8)
         play_surface = font.render(play_text, True, text_color)
         screen.blit(play_surface, play_surface.get_rect(center=(WIDTH // 2, button_y + button_height // 2)))
-        button_rects[0] = pygame.Rect(button_x, button_y, button_width, button_height)
+        button_rects["classic"] = pygame.Rect(button_x, button_y, button_width, button_height)
 
         # LEADERBOARD
         pygame.draw.rect(screen, leaderboard_button_color, (button_x, current_y, button_width, button_height), border_radius=8)
         lb_surface = font.render("LEADERBOARD", True, text_color)
         screen.blit(lb_surface, lb_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
-        button_rects[2] = pygame.Rect(button_x, current_y, button_width, button_height)
+        button_rects["leaderboard"] = pygame.Rect(button_x, current_y, button_width, button_height)
 
         # LAST RECORD
         current_y += spacing
         pygame.draw.rect(screen, last_record_button_color, (button_x, current_y, button_width, button_height), border_radius=8)
         lr_surface = font.render("LAST RECORD", True, text_color)
         screen.blit(lr_surface, lr_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
-        button_rects[3] = pygame.Rect(button_x, current_y, button_width, button_height)
+        button_rects["last_record"] = pygame.Rect(button_x, current_y, button_width, button_height)
 
         # QUIT
         current_y += spacing
         pygame.draw.rect(screen, quit_button_color, (button_x, current_y, button_width, button_height), border_radius=8)
         quit_surface = font.render("QUIT", True, text_color)
         screen.blit(quit_surface, quit_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
-        button_rects[1] = pygame.Rect(button_x, current_y, button_width, button_height)
+        button_rects["quit"] = pygame.Rect(button_x, current_y, button_width, button_height)
 
     elif state == 'in_game':
         # Optional: add a status bar, timer, or score here if needed.
-        return None, None, None, None
-
-    return tuple(button_rects)  # main, quit, leaderboard, last_record
-
-# 🎮 Draw Difficulty Buttons (Stacked)
-def draw_difficulty_buttons():
-    global difficulty_selected
-
-    y_start = HEIGHT // 2 - 60 # Centered vertically
-    button_width = 180 # Width of the buttons
-    button_height = 40 # Height of the buttons
-    spacing = 5
-
-    difficulties = ["Easy", "Normal", "Medium", "Hard"]
-    colors = [EASY_COLOR, NORMAL_COLOR, MEDIUM_COLOR, HARD_COLOR]
-    button_rects = {}
-
-    title_font = pygame.font.Font(None, 35)
-    title_text = title_font.render("CHOOSE DIFFICULTY", True, BLACK)
-    screen.blit(title_text, (WIDTH // 2 - 100, y_start - 50))
-
-    for i, difficulty in enumerate(difficulties):
-        button_x = WIDTH // 2 - button_width // 2  # Centered horizontally
-        button_y = y_start + (i * (button_height + spacing)) # Centered vertically
-        pygame.draw.rect(screen, colors[i], (button_x, button_y, button_width, button_height), border_radius=8)
-
-        text_surface = BUTTON_FONT.render(difficulty, True, BLACK)
-        text_rect = text_surface.get_rect(center=(button_x + button_width // 2, button_y + button_height // 2))
-        screen.blit(text_surface, text_rect)
-
-        button_rects[difficulty] = pygame.Rect(button_x, button_y, button_width, button_height)
+        return button_rects
 
     return button_rects
+
 
 # Functions to save the game state
 def pause_menu(uid_input, level, attempts, guessed_letters, selected_word, selected_difficulty, shuffled_words):
@@ -625,61 +906,133 @@ def save_game_state(uid_input, level, attempts, guessed_letters, selected_word, 
     
     print("[💾] Game state saved.")
 
-# Function to get a random word based on difficulty
-def get_word(difficulty):
+# Function to get current tier based on level
+def get_current_tier(level):
+    if level <= 5:
+        return "Easy"
+    elif level <= 10:
+        return "Normal"
+    else:
+        return "Hard"
+
+# Function to get background color based on level
+def get_background_color(level):
+    current_tier = get_current_tier(level)
+    tier_index = (level - 1) % 5  # Get index within tier (0-4)
+    return tier_colors[current_tier][tier_index]
+
+# Function to show tier completion screen
+def show_tier_completion(screen, tier, stars):
+    overlay = pygame.Surface((WIDTH, HEIGHT))
+    overlay.set_alpha(180)
+    overlay.fill((0, 0, 0))
+    screen.blit(overlay, (0, 0))
+
+    # Load star icon
+    star_icon = pygame.image.load("assets/icons/star.png")
+    star_icon = pygame.transform.scale(star_icon, (50, 50))
+
+    # Display congratulations text
+    font = pygame.font.Font(None, 48)
+    text = font.render(f"{tier} Tier Complete!", True, WHITE)
+    text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 50))
+    screen.blit(text, text_rect)
+
+    # Display stars
+    star_x = WIDTH // 2 - (stars * 30)
+    for i in range(stars):
+        screen.blit(star_icon, (star_x + i * 60, HEIGHT // 2 + 20))
+
+    # Display "Press any key to continue"
+    continue_font = pygame.font.Font(None, 24)
+    continue_text = continue_font.render("Press any key to continue", True, WHITE)
+    continue_rect = continue_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 100))
+    screen.blit(continue_text, continue_rect)
+
+    pygame.display.flip()
+
+    # Wait for key press
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
+                waiting = False
+
+# Function to get a word based on current level
+def get_word_for_level(level):
     global shuffled_words
-
+    current_tier = get_current_tier(level)
+    
     if not shuffled_words:
-        shuffled_words = words_by_difficulty[difficulty][:]
+        shuffled_words = words_by_tier[current_tier][:]
         random.shuffle(shuffled_words)
+    
+    return shuffled_words.pop()
 
-    return shuffled_words.pop() ## Get a word from the shuffled list
+# 🔵 Function to draw level indicators (updated for 15 levels)
+def draw_levels(level):
+    if not game_started or game_over:
+        return  # Draw levels only if the game is active
+    
+    x_start = 20  
+    y_start = 20  
+    radius = 8  
+    spacing = 5  
 
-# Function to handle button clicks
-def handle_button_click(pos):
-    global game_started, game_over, attempts, level, selected_word, guessed_letters
-    global selected_difficulty, difficulty_selected, shuffled_words
+    for i in range(15):  # 15 levels total
+        row = i % 5
+        col = i // 5
+        current_level = i + 1  # Convert to 1-based level number
+        
+        # Determine base color based on tier
+        if current_level <= 5:  # Easy tier (levels 1-5)
+            base_color = EASY_COLOR
+        elif current_level <= 10:  # Normal tier (levels 6-10)
+            base_color = NORMAL_COLOR
+        else:  # Hard tier (levels 11-15)
+            base_color = HARD_COLOR
+            
+        # Level is completed if current game level is higher than this indicator
+        # For level 1, the indicator should not be highlighted initially
+        is_completed = current_level < level
+        # Current level indicator should be orange
+        is_current = current_level == level
+        
+        if is_completed:
+            color = base_color  # Show completed levels in their tier color
+        elif is_current:
+            color = ORANGE  # Current level in orange
+        else:
+            color = GRAY  # Upcoming levels in gray
+        
+        x_pos = x_start + col * (radius * 2 + spacing)  
+        y_pos = y_start + row * (radius * 2 + spacing)  
 
-    button_x = WIDTH // 2 - 80  # Centered button
-    button_y = HEIGHT // 2 - 100
-    button_width = 160
-    button_height = 50
-
-    # Check if the Play or Play Again button is clicked
-    if button_x <= pos[0] <= button_x + button_width and button_y <= pos[1] <= button_y + button_height:
-        game_started = True
-        game_over = False
-        level = 0  # Restart from level 0
-        attempts = 4
-        guessed_letters.clear()
-        difficulty_selected = False  # Reset difficulty selection
-        shuffled_words = []  # Clear previously shuffled words
-        return
-
-    # Check if a difficulty button is clicked after starting the game
-    if game_started and not difficulty_selected:
-        difficulty_buttons = draw_difficulty_buttons()
-        for difficulty, rect in difficulty_buttons.items():
-            if rect.collidepoint(pos):
-                selected_difficulty = difficulty
-                difficulty_selected = True
-
-                shuffled_words = words_by_difficulty[selected_difficulty][:]
-                random.shuffle(shuffled_words)
-
-                if shuffled_words:
-                    selected_word = shuffled_words.pop()
-                return
+        pygame.draw.circle(screen, color, (x_pos, y_pos), radius)
+        pygame.draw.circle(screen, BLACK, (x_pos, y_pos), radius, 2)
 
 # 🔡 Function to draw word with rectangles and display category
 def draw_word(selected_word, guessed_letters):
-    if not game_started or game_over or not difficulty_selected:
-        return  # Only draw if game is active and difficulty is selected
+    if not game_started or game_over:
+        return  # Only draw if game is active
 
-    # 🏷️ Display Category Name (based on difficulty)
-    category_name = category_by_difficulty.get(selected_difficulty, "Unknown Category")
-    category_surface = CATEGORY_FONT.render(f"Category: {category_name}", True, (80, 80, 80))
-    category_rect = category_surface.get_rect(center=(WIDTH // 2, 130))  # Positioned above word panel
+    # 🏷️ Display Tier and Category Name
+    current_tier = get_current_tier(level)
+    category_name = category_by_tier.get(current_tier, "Unknown Category")
+    tier_text = f"Tier: {current_tier}"
+    category_text = f"Category: {category_name}"
+    
+    # Render tier text
+    tier_surface = CATEGORY_FONT.render(tier_text, True, (80, 80, 80))
+    tier_rect = tier_surface.get_rect(center=(WIDTH // 2, 110))
+    screen.blit(tier_surface, tier_rect)
+    
+    # Render category text
+    category_surface = CATEGORY_FONT.render(category_text, True, (80, 80, 80))
+    category_rect = category_surface.get_rect(center=(WIDTH // 2, 130))
     screen.blit(category_surface, category_rect)
 
     # 🧩 Draw Word Panel
@@ -774,26 +1127,6 @@ def draw_attempts(attempts):
         text_surface = X_FONT.render("X", True, ORANGE)  # 🎨 X in #fbb316
         screen.blit(text_surface, (x_pos, y_pos))  # 🖥️ Display X mark
 
-# 🔵 Function to draw level indicators
-def draw_levels(level):
-    if not game_started or game_over:
-        return  # Draw levels only if the game is active
-    
-    x_start = 20  
-    y_start = 20  
-    radius = 8  
-    spacing = 5  
-
-    for i in range(10):
-        row = i % 5
-        col = i // 5
-        color = ORANGE if i < level else GRAY
-        
-        x_pos = x_start + col * (radius * 2 + spacing)  
-        y_pos = y_start + row * (radius * 2 + spacing)  
-
-        pygame.draw.circle(screen, color, (x_pos, y_pos), radius)
-        pygame.draw.circle(screen, BLACK, (x_pos, y_pos), radius, 2)
 
 # 🔤 Function to show the word flash
 def show_word_flash(screen, word, color, font):
@@ -804,45 +1137,161 @@ def show_word_flash(screen, word, color, font):
     pygame.display.update()
     pygame.time.delay(1500)  # Pause for 1.5 seconds
 
+# Function to draw timer
+def draw_timer():
+    if game_mode != "timed" or selected_difficulty == "Easy":
+        return
+        
+    time_limit = time_limits[selected_difficulty]
+    elapsed_time = time.time() - word_start_time
+    remaining_time = max(0, time_limit - elapsed_time)
+    
+    # Draw timer bar - smaller and in top right corner
+    bar_width = 120  # Reduced from 200
+    bar_height = 15  # Reduced from 20
+    bar_x = WIDTH - bar_width - 10  # Closer to right edge
+    bar_y = 10  # Closer to top edge
+    
+    # Background bar (gray)
+    pygame.draw.rect(screen, GRAY, (bar_x, bar_y, bar_width, bar_height))
+    
+    # Time remaining bar (color based on time left)
+    remaining_ratio = remaining_time / time_limit
+    remaining_width = int(bar_width * remaining_ratio)
+    
+    if remaining_ratio > 0.6:
+        color = EASY_COLOR  # Green
+    elif remaining_ratio > 0.3:
+        color = ORANGE  # Orange
+    else:
+        color = RED  # Red
+        
+    pygame.draw.rect(screen, color, (bar_x, bar_y, remaining_width, bar_height))
+    
+    # Draw time text - smaller and next to the bar
+    timer_font = pygame.font.Font(None, 20)  # Reduced from 24
+    timer_text = f"{int(remaining_time)}s"
+    text_surface = timer_font.render(timer_text, True, BLACK)
+    screen.blit(text_surface, (bar_x + bar_width + 5, bar_y))
+    
+    # Check if time is up
+    if remaining_time <= 0 and not game_over:
+        show_word_flash(screen, selected_word['word'], RED, FONT)
+        return True
+    return False
+
+# Function to handle word completion and level progression
+def handle_word_completion(screen, current_level, game_mode, total_time_bonus):
+    """Handle level progression and tier completion.
+    Called BEFORE level increment, so:
+    - Level 5 completion = moving to level 6 (Easy tier complete)
+    - Level 10 completion = moving to level 11 (Normal tier complete)
+    - Level 15 = game complete (Hard tier complete)
+    """
+    if current_level == 5:  # Completing level 5, moving to level 6
+        show_tier_completion(screen, "Easy", 1)
+        if game_mode == "timed":
+            return 15  # Add 15 seconds bonus
+    elif current_level == 10:  # Completing level 10, moving to level 11
+        show_tier_completion(screen, "Normal", 2)
+        if game_mode == "timed":
+            return 30  # Add 30 seconds bonus
+    elif current_level == 15:  # Completing level 15, game complete
+        show_tier_completion(screen, "Hard", 3)
+    return 0  # No time bonus
+
 # 🎮 Main game function
 def play_spellout(uid_input, resumed=False):
-    global game_started, game_over, level_completed, difficulty_selected, selected_difficulty, selected_word, shuffled_words, guessed_letters, attempts, level
+    global game_started, game_over, level_completed, difficulty_selected, selected_difficulty
+    global selected_word, shuffled_words, guessed_letters, attempts, level, game_mode, word_start_time
 
     start_time = time.time()
+    total_time_bonus = 0  # Track accumulated time bonuses
 
-    # 🆕 Restore from resume if available
     if not resumed:
-        level = 0
+        level = 1  # Start at level 1
         guessed_letters = set()
         attempts = 4
-        selected_word = ""
-        selected_difficulty = ""
-        shuffled_words = []
-        game_started = False
-        difficulty_selected = False
+        selected_word = None
+        game_started = False  # Changed to False to show mode selection first
+        difficulty_selected = True  # No manual difficulty selection needed
+        game_mode = None  # No default mode, player must choose
+
+    # Track correctly guessed words for timed mode
+    correct_words = 0
 
     keys = create_virtual_keyboard()
     running = True
     player_name = uid_input
 
     while running:
-        screen.fill(WHITE)
+        current_bg_color = get_background_color(level) if game_started else WHITE
+        screen.fill(current_bg_color)
 
-        # 🎨 Draw UI based on state
         if not game_started:
-            main_button_rect, quit_button_rect, leaderboard_button_rect, last_record_button_rect = draw_game_controls(player_name, state='start')
-        elif game_started and not difficulty_selected:
-            draw_difficulty_buttons()
-        elif game_over:
-            main_button_rect, quit_button_rect, leaderboard_button_rect, last_record_button_rect = draw_game_controls(player_name, state='over')
-        elif level_completed:
-            main_button_rect, quit_button_rect, leaderboard_button_rect, last_record_button_rect = draw_game_controls(player_name, state='complete')
+            # Draw game mode selection screen
+            button_rects = draw_game_controls(player_name, state='start')
+        elif game_over or level_completed:
+            button_rects = draw_game_controls(player_name, state='complete')
         else:
-            draw_game_controls(player_name, state='in_game')
+            button_rects = draw_game_controls(player_name, state='in_game')
             draw_word(selected_word, guessed_letters)
             draw_virtual_keyboard(keys, guessed_letters)
             draw_attempts(attempts)
             draw_levels(level)
+            
+            if game_mode == "timed":
+                current_tier = get_current_tier(level)
+                time_limit = time_limits[current_tier] + total_time_bonus
+                elapsed_time = time.time() - word_start_time
+                remaining_time = max(0, time_limit - elapsed_time)
+                
+                # Draw timer
+                bar_width = 120
+                bar_height = 15
+                bar_x = WIDTH - bar_width - 10
+                bar_y = 10
+                
+                pygame.draw.rect(screen, GRAY, (bar_x, bar_y, bar_width, bar_height))
+                remaining_ratio = remaining_time / time_limit
+                remaining_width = int(bar_width * remaining_ratio)
+                
+                if remaining_ratio > 0.6:
+                    color = EASY_COLOR
+                elif remaining_ratio > 0.3:
+                    color = ORANGE
+                else:
+                    color = RED
+                    
+                pygame.draw.rect(screen, color, (bar_x, bar_y, remaining_width, bar_height))
+                
+                timer_font = pygame.font.Font(None, 20)
+                timer_text = f"{int(remaining_time)}s"
+                text_surface = timer_font.render(timer_text, True, BLACK)
+                screen.blit(text_surface, (bar_x + bar_width + 5, bar_y))
+                
+                if remaining_time <= 0:
+                    show_word_flash(screen, selected_word['word'], RED, FONT)
+                    pygame.time.delay(1000)
+                    
+                    if level < 15:
+                        # Check for tier completion before incrementing level
+                        time_bonus = handle_word_completion(screen, level, game_mode, total_time_bonus)
+                        total_time_bonus += time_bonus
+                        
+                        level += 1
+                        guessed_letters.clear()
+                        attempts = 4
+                        
+                        if level < 15:  # Only get new word if not at max level
+                            selected_word = get_word_for_level(level)
+                            word_start_time = time.time()
+                        else:  # At level 15
+                            end_time = time.time()
+                            duration = end_time - start_time
+                            level_completed = True
+                            update_player_record(uid_input, duration, correct_words if game_mode == "timed" else level, game_mode)
+                            show_last_record(uid_input)
 
         pygame.display.flip()
         pygame.time.delay(100)
@@ -855,32 +1304,38 @@ def play_spellout(uid_input, resumed=False):
                 mouse_pos = pygame.mouse.get_pos()
 
                 if not game_started:
-                    if main_button_rect.collidepoint(mouse_pos):
+                    if button_rects["classic"].collidepoint(mouse_pos):
                         game_started = True
-                    elif leaderboard_button_rect.collidepoint(mouse_pos):
-                        display_leaderboard()
-
-                elif not difficulty_selected:
-                    handle_button_click(mouse_pos)
+                        game_mode = "classic"
+                        selected_word = get_word_for_level(level)
+                        word_start_time = time.time()
+                        start_time = time.time()
+                    elif button_rects["timed"].collidepoint(mouse_pos):
+                        game_started = True
+                        game_mode = "timed"
+                        selected_word = get_word_for_level(level)
+                        word_start_time = time.time()
+                        start_time = time.time()
 
                 elif game_over or level_completed:
-                    if main_button_rect.collidepoint(mouse_pos):
+                    if button_rects["classic"].collidepoint(mouse_pos):
                         game_over = False
                         level_completed = False
-                        level = 0
-                        difficulty_selected = False
+                        level = 1
                         guessed_letters.clear()
                         attempts = 4
-                        selected_word = get_word(selected_difficulty)
-                    elif quit_button_rect.collidepoint(mouse_pos):
+                        correct_words = 0
+                        total_time_bonus = 0
+                        selected_word = get_word_for_level(level)
+                        word_start_time = time.time()
+                        start_time = time.time()
+                    elif button_rects["quit"].collidepoint(mouse_pos):
                         pygame.quit()
                         sys.exit()
-                    elif leaderboard_button_rect.collidepoint(mouse_pos):
-                        display_leaderboard()
-                    elif last_record_button_rect.collidepoint(mouse_pos):
+                    elif button_rects["leaderboard"].collidepoint(mouse_pos):
+                        display_leaderboard(uid_input)
+                    elif button_rects["last_record"].collidepoint(mouse_pos):
                         show_last_record(uid_input)
-                    else:
-                        handle_button_click(mouse_pos)
 
                 elif not game_over:
                     for letter, rect in keys.items():
@@ -891,57 +1346,77 @@ def play_spellout(uid_input, resumed=False):
                                 if all(l in guessed_letters for l in selected_word['word']):
                                     show_word_flash(screen, selected_word['word'], (0, 255, 0), FONT)
                                     pygame.time.delay(500)
-                                    level += 1
-                                    guessed_letters.clear()
-                                    attempts = 4
-                                    selected_word = get_word(selected_difficulty)
-                                    if level == 10:
-                                        level_completed = True
-                                        break
+                                    
+                                    if level < 15:
+                                        # Check for tier completion before incrementing level
+                                        time_bonus = handle_word_completion(screen, level, game_mode, total_time_bonus)
+                                        total_time_bonus += time_bonus
+                                        
+                                        level += 1
+                                        if game_mode == "timed":
+                                            correct_words += 1
+                                        guessed_letters.clear()
+                                        attempts = 4
+                                        
+                                        if level < 15:  # Only get new word if not at max level
+                                            selected_word = get_word_for_level(level)
+                                            word_start_time = time.time()
+                                        else:  # At level 15
+                                            end_time = time.time()
+                                            duration = end_time - start_time
+                                            level_completed = True
+                                            update_player_record(uid_input, duration, correct_words if game_mode == "timed" else level, game_mode)
+                                            show_last_record(uid_input)
                             else:
                                 attempts -= 1
                                 wrong_sound.play()
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    pause_menu(uid_input, level, attempts, guessed_letters, selected_word, selected_difficulty, shuffled_words)  # 🆕
+                    pause_menu(uid_input, level, attempts, guessed_letters, selected_word, get_current_tier(level), shuffled_words)
                 else:
                     guess = event.unicode.upper()
                     if guess in keys and guess not in guessed_letters:
                         guessed_letters.add(guess)
                         if guess in selected_word['word']:
                             correct_sound.play()
+                            if all(l in guessed_letters for l in selected_word['word']):
+                                show_word_flash(screen, selected_word['word'], (0, 255, 0), FONT)
+                                pygame.time.delay(500)
+                                
+                                if level < 15:
+                                    # Check for tier completion before incrementing level
+                                    time_bonus = handle_word_completion(screen, level, game_mode, total_time_bonus)
+                                    total_time_bonus += time_bonus
+                                    
+                                    level += 1
+                                    if game_mode == "timed":
+                                        correct_words += 1
+                                    guessed_letters.clear()
+                                    attempts = 4
+                                    
+                                    if level < 15:  # Only get new word if not at max level
+                                        selected_word = get_word_for_level(level)
+                                        word_start_time = time.time()
+                                    else:  # At level 15
+                                        end_time = time.time()
+                                        duration = end_time - start_time
+                                        level_completed = True
+                                        update_player_record(uid_input, duration, correct_words if game_mode == "timed" else level, game_mode)
+                                        show_last_record(uid_input)
                         else:
                             attempts -= 1
                             wrong_sound.play()
 
-
-            # ✅ Win check
-            if difficulty_selected and not game_over and all(l in guessed_letters for l in selected_word['word']):
-                show_word_flash(screen, selected_word['word'], (0, 255, 0), FONT)
-                pygame.time.delay(500)
-                if level < 10:
-                    level += 1
-                    selected_word = get_word(selected_difficulty)
-                    guessed_letters.clear()
-                    attempts = 4
-                else:
-                    level_completed = True
-                    end_time = time.time()
-                    duration = end_time - start_time
-                    print(f"Player UID: {uid_input}, Duration: {duration}, Level: {level}")
-                    update_player_record(uid_input, duration, level)
-                    break
-
-            # ❌ Loss check
-            if not game_over and attempts == 0:
-                show_word_flash(screen, selected_word['word'], (255, 0, 0), FONT)
-                pygame.time.delay(500)
-                game_over = True
-                end_time = time.time()
-                duration = end_time - start_time
-                print(f"Player UID: {uid_input}, Duration: {duration}, Level: {level}")
-                update_player_record(uid_input, duration, level)
+        # ❌ LOSS CHECK (outside event loop)
+        if not game_over and attempts == 0:
+            show_word_flash(screen, selected_word['word'], (255, 0, 0), FONT)
+            pygame.time.delay(500)
+            game_over = True
+            end_time = time.time()
+            duration = end_time - start_time
+            update_player_record(uid_input, duration, correct_words if game_mode == "timed" else level, game_mode)
+            show_last_record(uid_input)
 
     pygame.quit()
 
