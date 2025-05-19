@@ -44,25 +44,50 @@ pygame.display.set_caption("Spellout Game")
 # 📜 Word Lists by Tier with Clues
 words_by_tier = {
     "Easy": [  # Levels 1-5
-        {"word": "CAT", "clue": "A small domesticated carnivorous mammal with retractable claws."},
-        {"word": "FROG", "clue": "An amphibian known for its jumping ability and croaking sound."},
-        {"word": "SPIDER", "clue": "An arachnid with eight legs, known for spinning webs."},
+        {"word": "HUMAN", "clue": "A bipedal primate species, known for its intelligence and ability to create complex tools."},
         {"word": "EAGLE", "clue": "A large bird of prey, known for its keen eyesight and powerful flight."},
-        {"word": "HUMAN", "clue": "A bipedal primate species, known for its intelligence and ability to create complex tools."}
+        {"word": "PANTHER", "clue": "A big cat found in the Americas, known for its stealthy hunting skills."},
+        {"word": "CROCODILE", "clue": "A large reptile that lives in rivers and is known for its sharp teeth and strong jaws."},
+        {"word": "TORTOISE", "clue": "A slow-moving land reptile with a hard shell that protects its body."},
+        {"word": "SPIDER", "clue": "An arachnid with eight legs, known for spinning webs."},
+        {"word": "FROG", "clue": "An amphibian known for its jumping ability and croaking sound."},
+        {"word": "CAT", "clue": "A small domesticated carnivorous mammal with retractable claws."},
+        {"word": "BUTTERFLY", "clue": "A colorful insect with delicate wings that goes through metamorphosis."},
+        {"word": "HUSKY", "clue": "A strong, thick-coated dog breed known for pulling sleds in snowy regions."}
     ],
     "Normal": [  # Levels 6-10
-        {"word": "HELLO", "clue": "From the album *25* by Adele"},
-        {"word": "ROAR", "clue": "From the album *Prism* by Katy Perry"},
         {"word": "BLUE", "clue": "From the album *Blue* by Yung Kai"},
+        {"word": "ENCHANTED", "clue": "From the album *Speak Now* by Taylor Swift"},
+        {"word": "TREASURE", "clue": "From the album *Unorthodox Jukebox* by Bruno Mars"},
+        {"word": "PHOTOGRAPH", "clue": "From the album *x (Multiply)* by Ed Sheeran"},
         {"word": "JUDAS", "clue": "From the album *Born This Way* by Lady Gaga"},
-        {"word": "PERFECT", "clue": "From the album *÷ (Divide)* by Ed Sheeran"}
+        {"word": "ROAR", "clue": "From the album *Prism* by Katy Perry"},
+        {"word": "GRENADE", "clue": "From the album *Doo-Wops & Hooligans* by Bruno Mars"},
+        {"word": "CHANDELIER", "clue": "From the album *1000 Forms of Fear* by Sia"},
+        {"word": "HELLO", "clue": "From the album *25* by Adele"},
+        {"word": "PERFECT", "clue": "From the album *÷ (Divide)* by Ed Sheeran"},
     ],
     "Hard": [  # Levels 11-15
+        {"word": "EIFFEL", "clue": "Paris icon"},
+        {"word": "PYRAMID", "clue": "Egypt tomb"},
+        {"word": "COLOSSEUM", "clue": "Rome arena"},
+        {"word": "ACROPOLIS", "clue": "Greek hilltop"},
+        {"word": "SYDNEY", "clue": "Opera house"},
+        {"word": "STONEHENGE", "clue": "Ancient rocks"},
+        {"word": "PETRA", "clue": "Jordan ruins"},
+        {"word": "SPHINX", "clue": "Egypt guardian"},
+        {"word": "ANGKOR", "clue": "Cambodia temple"},
+        {"word": "ALHAMBRA", "clue": "Spanish palace"},
+        {"word": "RENAISSANCE", "clue": "Rebirth"},
+        {"word": "REVOLUTION", "clue": "Uprising"},
+        {"word": "IMPERIALISM", "clue": "Colonial"},
         {"word": "GENOCIDE", "clue": "Massacre"},
         {"word": "CRUSADE", "clue": "Holy"},
         {"word": "FASCISM", "clue": "Dictator"},
+        {"word": "ARMISTICE", "clue": "Truce"},
         {"word": "TREATY", "clue": "Agreement"},
-        {"word": "ENLIGHTENMENT", "clue": "Reason"}
+        {"word": "FEUDALISM", "clue": "Hierarchy"},
+        {"word": "ENLIGHTENMENT", "clue": "Reason"},
     ]
 }
 
@@ -70,7 +95,7 @@ words_by_tier = {
 category_by_tier = {
     "Easy": "Animal Kingdom",
     "Normal": "Song Titles",
-    "Hard": "History"
+    "Hard": "World & History"
 }
 
 # Time limits for each tier (in seconds)
@@ -115,7 +140,7 @@ attempts = 4 # Number of attempts
 guessed_letters = set() # Set to store guessed letters
 selected_word = "" # Word to guess
 selected_difficulty = "" # Selected difficulty
-shuffled_words = []  # List of non-repeating words per game
+shuffled_words = {}  # List of non-repeating words per game
 game_mode = "classic"  # Game mode (classic or timed)
 word_timer = 0  # Timer for timed mode
 word_start_time = 0  # Start time for current word
@@ -240,7 +265,8 @@ def load_and_resize_gif(gif_path):
 
 # Load both GIFs
 welcome_frames = load_and_resize_gif('assets/images/welcome.gif')
-uid_frames = load_and_resize_gif('assets/images/welcome2.gif')  # Replace with actual path
+uid_frames = load_and_resize_gif('assets/images/welcome2.gif')
+resume_frames = load_and_resize_gif('assets/images/resume_screen.gif')  # Add new GIF
 
 # Function to show the game manual
 def show_game_manual():
@@ -441,22 +467,32 @@ def resume_prompt_screen():
                 print("Error decoding save file:", e)
                 saved_state = None
 
-    resume_button = pygame.Rect(WIDTH // 2 - 80, HEIGHT // 2 - 20, 160, 40)
-    info_text = FONT.render("Press Enter for New Game", True, BLACK)
+    # Button dimensions and positioning
+    button_width = 160
+    button_height = 40
+    button_spacing = 10
 
+    # Position resume button near bottom of screen
+    resume_button = pygame.Rect(WIDTH // 2 - button_width // 2, HEIGHT - button_height - 100, button_width, button_height)
+    
     running = True
+    clock = pygame.time.Clock()
+    frame_index = 0
+    total_frames = len(resume_frames)
+
     while running:
         screen.fill(WHITE)
 
+        # Display the resume screen GIF frame
+        screen.blit(resume_frames[frame_index], (0, 0))
+        frame_index = (frame_index + 1) % total_frames
+
         if saved_state:
-            # Draw resume button
+            # Draw resume button with consistent styling
             pygame.draw.rect(screen, BLUE, resume_button, border_radius=8)
-            resume_text = BUTTON_FONT.render("Resume", True, WHITE)
+            resume_text = BUTTON_FONT.render("Resume Game", True, WHITE)
             text_rect = resume_text.get_rect(center=resume_button.center)
             screen.blit(resume_text, text_rect)
-
-        # Always show new game option
-        screen.blit(info_text, (WIDTH // 2 - info_text.get_width() // 2, HEIGHT // 2 + 50))
 
         pygame.display.flip()
 
@@ -466,10 +502,10 @@ def resume_prompt_screen():
                 sys.exit()
 
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN:
+                if event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE:
                     # Clear saved game and proceed to UID screen
-                    if os.path.exists("savegame.json"):
-                        os.remove("savegame.json")
+                    if os.path.exists("data/savegame.json"):
+                        os.remove("data/savegame.json")
                     uid_screen()
                     return
 
@@ -487,6 +523,8 @@ def resume_prompt_screen():
                     uid_input = saved_state["uid"]
                     play_spellout(uid_input, resumed=True)
                     return
+
+        clock.tick(15)  # Control animation speed
 
 # Function to display the leaderboard
 def display_leaderboard(uid_input):
@@ -760,10 +798,14 @@ def show_last_record(uid_input):
                 elif timed_button.collidepoint(board_pos):
                     current_mode = "timed"
 
+# Function to get hover color
+def get_hover_color(base_color):
+    """Lighten a color when hovering."""
+    return tuple(min(c + 30, 255) for c in base_color)
+
 # 🎮 Function to draw game controls
 def draw_game_controls(player_name=None, state='start'):
     button_color = (71, 185, 112)      # Green
-    border_color = (12, 192, 223)      # Cyan
     quit_button_color = (255, 0, 0)    # Red
     leaderboard_button_color = (100, 150, 255)  # Blue
     last_record_button_color = (255, 223, 100)  # Yellow
@@ -779,6 +821,9 @@ def draw_game_controls(player_name=None, state='start'):
     font = pygame.font.Font(None, 30)
     button_rects = {"classic": None, "timed": None, "quit": None, "leaderboard": None, "last_record": None}
 
+    # Get mouse position for hover effects
+    mouse_pos = pygame.mouse.get_pos()
+
     # ✳️ STATE-SPECIFIC UI
     if state == 'start':
         text = f"Welcome {player_name}!"
@@ -788,23 +833,26 @@ def draw_game_controls(player_name=None, state='start'):
         screen.blit(text_surface, text_surface.get_rect(center=(WIDTH // 2, button_y - 30)))
 
         # CLASSIC MODE button
-        pygame.draw.rect(screen, border_color, (button_x - 4, button_y - 4, button_width + 10, button_height + 10), border_radius=10)
-        pygame.draw.rect(screen, button_color, (button_x, button_y, button_width, button_height), border_radius=8)
+        classic_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+        classic_color = get_hover_color(button_color) if classic_rect.collidepoint(mouse_pos) else button_color
+        pygame.draw.rect(screen, classic_color, classic_rect, border_radius=8)
         classic_surface = font.render("CLASSIC MODE", True, text_color)
         screen.blit(classic_surface, classic_surface.get_rect(center=(WIDTH // 2, button_y + button_height // 2)))
-        button_rects["classic"] = pygame.Rect(button_x, button_y, button_width, button_height)
+        button_rects["classic"] = classic_rect
 
         # TIMED MODE button
-        pygame.draw.rect(screen, leaderboard_button_color, (button_x, current_y, button_width, button_height), border_radius=8)
+        timed_rect = pygame.Rect(button_x, current_y, button_width, button_height)
+        timed_color = get_hover_color(leaderboard_button_color) if timed_rect.collidepoint(mouse_pos) else leaderboard_button_color
+        pygame.draw.rect(screen, timed_color, timed_rect, border_radius=8)
         timed_surface = font.render("TIMED MODE", True, text_color)
         screen.blit(timed_surface, timed_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
-        button_rects["timed"] = pygame.Rect(button_x, current_y, button_width, button_height)
+        button_rects["timed"] = timed_rect
 
     elif state in ('over', 'complete'):
         if state == 'over':
             text = "GAME OVER! WANT TO PLAY AGAIN?"
         else:
-            text = "CONGRATULATIONS! YOU COMPLETED 10 LEVELS!"
+            text = "CONGRATULATIONS! YOU COMPLETED ALL LEVELS!"
         play_text = "PLAY AGAIN"
 
         # Title Text
@@ -812,35 +860,38 @@ def draw_game_controls(player_name=None, state='start'):
         screen.blit(text_surface, text_surface.get_rect(center=(WIDTH // 2, button_y - 30)))
 
         # PLAY AGAIN button
-        pygame.draw.rect(screen, border_color, (button_x - 4, button_y - 4, button_width + 10, button_height + 10), border_radius=10)
-        pygame.draw.rect(screen, button_color, (button_x, button_y, button_width, button_height), border_radius=8)
+        play_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+        play_color = get_hover_color(button_color) if play_rect.collidepoint(mouse_pos) else button_color
+        pygame.draw.rect(screen, play_color, play_rect, border_radius=8)
         play_surface = font.render(play_text, True, text_color)
         screen.blit(play_surface, play_surface.get_rect(center=(WIDTH // 2, button_y + button_height // 2)))
-        button_rects["classic"] = pygame.Rect(button_x, button_y, button_width, button_height)
+        button_rects["classic"] = play_rect
 
         # LEADERBOARD
-        pygame.draw.rect(screen, leaderboard_button_color, (button_x, current_y, button_width, button_height), border_radius=8)
+        lb_rect = pygame.Rect(button_x, current_y, button_width, button_height)
+        lb_color = get_hover_color(leaderboard_button_color) if lb_rect.collidepoint(mouse_pos) else leaderboard_button_color
+        pygame.draw.rect(screen, lb_color, lb_rect, border_radius=8)
         lb_surface = font.render("LEADERBOARD", True, text_color)
         screen.blit(lb_surface, lb_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
-        button_rects["leaderboard"] = pygame.Rect(button_x, current_y, button_width, button_height)
+        button_rects["leaderboard"] = lb_rect
 
         # LAST RECORD
         current_y += spacing
-        pygame.draw.rect(screen, last_record_button_color, (button_x, current_y, button_width, button_height), border_radius=8)
+        lr_rect = pygame.Rect(button_x, current_y, button_width, button_height)
+        lr_color = get_hover_color(last_record_button_color) if lr_rect.collidepoint(mouse_pos) else last_record_button_color
+        pygame.draw.rect(screen, lr_color, lr_rect, border_radius=8)
         lr_surface = font.render("LAST RECORD", True, text_color)
         screen.blit(lr_surface, lr_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
-        button_rects["last_record"] = pygame.Rect(button_x, current_y, button_width, button_height)
+        button_rects["last_record"] = lr_rect
 
         # QUIT
         current_y += spacing
-        pygame.draw.rect(screen, quit_button_color, (button_x, current_y, button_width, button_height), border_radius=8)
+        quit_rect = pygame.Rect(button_x, current_y, button_width, button_height)
+        quit_color = get_hover_color(quit_button_color) if quit_rect.collidepoint(mouse_pos) else quit_button_color
+        pygame.draw.rect(screen, quit_color, quit_rect, border_radius=8)
         quit_surface = font.render("QUIT", True, text_color)
         screen.blit(quit_surface, quit_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
-        button_rects["quit"] = pygame.Rect(button_x, current_y, button_width, button_height)
-
-    elif state == 'in_game':
-        # Optional: add a status bar, timer, or score here if needed.
-        return button_rects
+        button_rects["quit"] = quit_rect
 
     return button_rects
 
@@ -852,8 +903,21 @@ def pause_menu(uid_input, level, attempts, guessed_letters, selected_word, selec
     overlay.set_alpha(180)
     overlay.fill((0, 0, 0))
 
-    resume_button = pygame.Rect(WIDTH//2 - 75, HEIGHT//2 - 40, 150, 40)
-    save_exit_button = pygame.Rect(WIDTH//2 - 75, HEIGHT//2 + 10, 150, 40)
+    # Button dimensions and positioning
+    button_width = 160
+    button_height = 40
+    button_spacing = 10
+    total_height = (button_height * 3) + (button_spacing * 2)  # 3 buttons with spacing
+    start_y = (HEIGHT - total_height) // 2
+
+    # Create buttons with consistent styling
+    resume_button = pygame.Rect(WIDTH//2 - button_width//2, start_y, button_width, button_height)
+    save_button = pygame.Rect(WIDTH//2 - button_width//2, start_y + button_height + button_spacing, button_width, button_height)
+    save_exit_button = pygame.Rect(WIDTH//2 - button_width//2, start_y + (button_height + button_spacing) * 2, button_width, button_height)
+
+    # Title font
+    title_font = pygame.font.Font(None, 48)
+    button_font = pygame.font.Font(None, 30)
 
     while paused:
         for event in pygame.event.get():
@@ -867,6 +931,16 @@ def pause_menu(uid_input, level, attempts, guessed_letters, selected_word, selec
                 pos = pygame.mouse.get_pos()
                 if resume_button.collidepoint(pos):
                     paused = False
+                elif save_button.collidepoint(pos):
+                    save_game_state(
+                        uid_input,
+                        level,
+                        attempts,
+                        guessed_letters,
+                        selected_word,
+                        selected_difficulty,
+                        shuffled_words
+                    )
                 elif save_exit_button.collidepoint(pos):
                     save_game_state(
                         uid_input,
@@ -881,11 +955,25 @@ def pause_menu(uid_input, level, attempts, guessed_letters, selected_word, selec
                     sys.exit()
 
         screen.blit(overlay, (0, 0))
-        pygame.draw.rect(screen, BLUE, resume_button)
-        pygame.draw.rect(screen, ORANGE, save_exit_button)
 
-        screen.blit(BUTTON_FONT.render("Resume", True, WHITE), (resume_button.x + 20, resume_button.y + 8))
-        screen.blit(BUTTON_FONT.render("Save and Exit", True, WHITE), (save_exit_button.x + 10, save_exit_button.y + 8))
+        # Draw title
+        title_text = title_font.render("GAME PAUSED", True, WHITE)
+        title_rect = title_text.get_rect(center=(WIDTH//2, start_y - 50))
+        screen.blit(title_text, title_rect)
+
+        # Draw buttons with consistent styling
+        for button, text, color in [
+            (resume_button, "Resume", BLUE),
+            (save_button, "Save", NORMAL_COLOR),
+            (save_exit_button, "Save and Exit", ORANGE)
+        ]:
+            # Draw button with rounded corners
+            pygame.draw.rect(screen, color, button, border_radius=8)
+            
+            # Draw button text
+            text_surface = button_font.render(text, True, WHITE)
+            text_rect = text_surface.get_rect(center=button.center)
+            screen.blit(text_surface, text_rect)
 
         pygame.display.flip()
         pygame.time.delay(100)
@@ -963,14 +1051,26 @@ def show_tier_completion(screen, tier, stars):
 
 # Function to get a word based on current level
 def get_word_for_level(level):
+    """Get a word appropriate for the current level.
+    Maintains separate shuffled lists for each tier."""
     global shuffled_words
+    
+    # Initialize shuffled_words as a dictionary if it doesn't exist
+    if not isinstance(shuffled_words, dict):
+        shuffled_words = {
+            "Easy": [],
+            "Normal": [],
+            "Hard": []
+        }
+    
     current_tier = get_current_tier(level)
     
-    if not shuffled_words:
-        shuffled_words = words_by_tier[current_tier][:]
-        random.shuffle(shuffled_words)
+    # If the current tier's list is empty, refill it
+    if not shuffled_words[current_tier]:
+        shuffled_words[current_tier] = words_by_tier[current_tier][:]
+        random.shuffle(shuffled_words[current_tier])
     
-    return shuffled_words.pop()
+    return shuffled_words[current_tier].pop()
 
 # 🔵 Function to draw level indicators (updated for 15 levels)
 def draw_levels(level):
@@ -1202,7 +1302,7 @@ def handle_word_completion(screen, current_level, game_mode, total_time_bonus):
 
 # 🎮 Main game function
 def play_spellout(uid_input, resumed=False):
-    global game_started, game_over, level_completed, difficulty_selected, selected_difficulty
+    global game_started, game_over, level_completed, difficulty_selected
     global selected_word, shuffled_words, guessed_letters, attempts, level, game_mode, word_start_time
 
     start_time = time.time()
@@ -1216,6 +1316,12 @@ def play_spellout(uid_input, resumed=False):
         game_started = False  # Changed to False to show mode selection first
         difficulty_selected = True  # No manual difficulty selection needed
         game_mode = None  # No default mode, player must choose
+        # Initialize shuffled_words as a dictionary
+        shuffled_words = {
+            "Easy": [],
+            "Normal": [],
+            "Hard": []
+        }
 
     # Track correctly guessed words for timed mode
     correct_words = 0
