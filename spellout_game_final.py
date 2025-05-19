@@ -108,25 +108,25 @@ time_limits = {
 # Background colors for each tier (from light to dark)
 tier_colors = {
     "Easy": [
-        (200, 255, 200),  # Lightest green
-        (180, 255, 180),
-        (160, 255, 160),
-        (140, 255, 140),
-        (120, 255, 120)   # Darkest green
+        (236, 250, 220),  # Level 1: #ecfadc
+        (221, 242, 209),  # Level 2: #ddf2d1
+        (205, 235, 197),  # Level 3: #cdebc5
+        (190, 227, 186),  # Level 4: #bee3ba
+        (174, 220, 174)   # Level 5: #aedcae
     ],
     "Normal": [
-        (255, 230, 200),  # Lightest orange
-        (255, 220, 180),
-        (255, 210, 160),
-        (255, 200, 140),
-        (255, 190, 120)   # Darkest orange
+        (245, 241, 251),  # Level 6: #f5f1fb
+        (234, 226, 247),  # Level 7: #eae2f7
+        (224, 212, 243),  # Level 8: #e0d4f3
+        (213, 197, 239),  # Level 9: #d5c5ef
+        (203, 183, 235)   # Level 10: #cbb7eb
     ],
     "Hard": [
-        (255, 200, 200),  # Lightest red
-        (255, 180, 180),
-        (255, 160, 160),
-        (255, 140, 140),
-        (255, 120, 120)   # Darkest red
+        (245, 241, 251),  # Level 11: #f5f1fb
+        (234, 226, 247),  # Level 12: #eae2f7
+        (224, 212, 243),  # Level 13: #e0d4f3
+        (213, 197, 239),  # Level 14: #d5c5ef
+        (203, 183, 235)   # Level 15: #cbb7eb
     ]
 }
 
@@ -827,7 +827,9 @@ def draw_game_controls(player_name=None, state='start'):
     spacing = button_height + 10
     current_y = button_y + spacing
 
-    font = pygame.font.Font(None, 30)
+    # Adjusted font sizes
+    title_font = pygame.font.Font(None, 36)  # Larger font for titles
+    button_font = pygame.font.Font(None, 28)  # Smaller font for buttons
     button_rects = {"classic": None, "timed": None, "quit": None, "leaderboard": None, "last_record": None}
 
     # Get mouse position for hover effects
@@ -838,14 +840,14 @@ def draw_game_controls(player_name=None, state='start'):
         text = f"Welcome {player_name}!"
         
         # Title Text
-        text_surface = font.render(text, True, text_color)
+        text_surface = title_font.render(text, True, text_color)
         screen.blit(text_surface, text_surface.get_rect(center=(WIDTH // 2, button_y - 30)))
 
         # CLASSIC MODE button
         classic_rect = pygame.Rect(button_x, button_y, button_width, button_height)
         classic_color = get_hover_color(button_color) if classic_rect.collidepoint(mouse_pos) else button_color
         pygame.draw.rect(screen, classic_color, classic_rect, border_radius=8)
-        classic_surface = font.render("CLASSIC MODE", True, text_color)
+        classic_surface = button_font.render("CLASSIC MODE", True, text_color)
         screen.blit(classic_surface, classic_surface.get_rect(center=(WIDTH // 2, button_y + button_height // 2)))
         button_rects["classic"] = classic_rect
 
@@ -853,7 +855,7 @@ def draw_game_controls(player_name=None, state='start'):
         timed_rect = pygame.Rect(button_x, current_y, button_width, button_height)
         timed_color = get_hover_color(leaderboard_button_color) if timed_rect.collidepoint(mouse_pos) else leaderboard_button_color
         pygame.draw.rect(screen, timed_color, timed_rect, border_radius=8)
-        timed_surface = font.render("TIMED MODE", True, text_color)
+        timed_surface = button_font.render("TIMED MODE", True, text_color)
         screen.blit(timed_surface, timed_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
         button_rects["timed"] = timed_rect
 
@@ -865,14 +867,14 @@ def draw_game_controls(player_name=None, state='start'):
         play_text = "PLAY AGAIN"
 
         # Title Text
-        text_surface = font.render(text, True, text_color)
+        text_surface = title_font.render(text, True, text_color)
         screen.blit(text_surface, text_surface.get_rect(center=(WIDTH // 2, button_y - 30)))
 
         # PLAY AGAIN button
         play_rect = pygame.Rect(button_x, button_y, button_width, button_height)
         play_color = get_hover_color(button_color) if play_rect.collidepoint(mouse_pos) else button_color
         pygame.draw.rect(screen, play_color, play_rect, border_radius=8)
-        play_surface = font.render(play_text, True, text_color)
+        play_surface = button_font.render(play_text, True, text_color)
         screen.blit(play_surface, play_surface.get_rect(center=(WIDTH // 2, button_y + button_height // 2)))
         button_rects["classic"] = play_rect
 
@@ -880,7 +882,7 @@ def draw_game_controls(player_name=None, state='start'):
         lb_rect = pygame.Rect(button_x, current_y, button_width, button_height)
         lb_color = get_hover_color(leaderboard_button_color) if lb_rect.collidepoint(mouse_pos) else leaderboard_button_color
         pygame.draw.rect(screen, lb_color, lb_rect, border_radius=8)
-        lb_surface = font.render("LEADERBOARD", True, text_color)
+        lb_surface = button_font.render("LEADERBOARD", True, text_color)
         screen.blit(lb_surface, lb_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
         button_rects["leaderboard"] = lb_rect
 
@@ -889,7 +891,7 @@ def draw_game_controls(player_name=None, state='start'):
         lr_rect = pygame.Rect(button_x, current_y, button_width, button_height)
         lr_color = get_hover_color(last_record_button_color) if lr_rect.collidepoint(mouse_pos) else last_record_button_color
         pygame.draw.rect(screen, lr_color, lr_rect, border_radius=8)
-        lr_surface = font.render("LAST RECORD", True, text_color)
+        lr_surface = button_font.render("LAST RECORD", True, text_color)
         screen.blit(lr_surface, lr_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
         button_rects["last_record"] = lr_rect
 
@@ -898,7 +900,7 @@ def draw_game_controls(player_name=None, state='start'):
         quit_rect = pygame.Rect(button_x, current_y, button_width, button_height)
         quit_color = get_hover_color(quit_button_color) if quit_rect.collidepoint(mouse_pos) else quit_button_color
         pygame.draw.rect(screen, quit_color, quit_rect, border_radius=8)
-        quit_surface = font.render("QUIT", True, text_color)
+        quit_surface = button_font.render("QUIT", True, text_color)
         screen.blit(quit_surface, quit_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
         button_rects["quit"] = quit_rect
 
@@ -1352,13 +1354,20 @@ def play_spellout(uid_input, resumed=False):
     player_name = uid_input
 
     while running:
-        current_bg_color = get_background_color(level) if game_started else WHITE
+        # Only use level-based background color during active gameplay
+        if game_started and not (game_over or level_completed):
+            current_bg_color = get_background_color(level)
+        else:
+            current_bg_color = WHITE
+            
         screen.fill(current_bg_color)
 
         if not game_started:
             # Draw game mode selection screen
             button_rects = draw_game_controls(player_name, state='start')
-        elif game_over or level_completed:
+        elif game_over:
+            button_rects = draw_game_controls(player_name, state='over')
+        elif level_completed:
             button_rects = draw_game_controls(player_name, state='complete')
         else:
             button_rects = draw_game_controls(player_name, state='in_game')
