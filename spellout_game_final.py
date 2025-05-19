@@ -144,6 +144,9 @@ shuffled_words = {}  # List of non-repeating words per game
 game_mode = "classic"  # Game mode (classic or timed)
 word_timer = 0  # Timer for timed mode
 word_start_time = 0  # Start time for current word
+is_paused = False  # Track pause state
+pause_start_time = 0  # Track when pause started
+total_pause_time = 0  # Track total time spent paused
 
 # Separate leaderboards for classic and timed modes
 CLASSIC_LEADERBOARD_FILE = "data/classic_leaderboard.json"
@@ -904,7 +907,12 @@ def draw_game_controls(player_name=None, state='start'):
 
 # Functions to save the game state
 def pause_menu(uid_input, level, attempts, guessed_letters, selected_word, selected_difficulty, shuffled_words):
+    global is_paused, pause_start_time, total_pause_time
+    
     paused = True
+    is_paused = True
+    pause_start_time = time.time()
+    
     overlay = pygame.Surface((WIDTH, HEIGHT))
     overlay.set_alpha(180)
     overlay.fill((0, 0, 0))
@@ -933,10 +941,14 @@ def pause_menu(uid_input, level, attempts, guessed_letters, selected_word, selec
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     paused = False  # Resume
+                    is_paused = False
+                    total_pause_time += time.time() - pause_start_time
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 if resume_button.collidepoint(pos):
                     paused = False
+                    is_paused = False
+                    total_pause_time += time.time() - pause_start_time
                 elif save_button.collidepoint(pos):
                     save_game_state(
                         uid_input,
@@ -1245,19 +1257,27 @@ def show_word_flash(screen, word, color, font):
 
 # Function to draw timer
 def draw_timer():
+    global total_pause_time
+    
     current_tier = get_current_tier(level)
     if game_mode != "timed":
         return False
         
     time_limit = time_limits[current_tier]
-    elapsed_time = time.time() - word_start_time
+    
+    # Calculate elapsed time accounting for pauses
+    if is_paused:
+        elapsed_time = pause_start_time - word_start_time - total_pause_time
+    else:
+        elapsed_time = time.time() - word_start_time - total_pause_time
+    
     remaining_time = max(0, time_limit - elapsed_time)
     
-    # Draw timer bar - smaller and in top right corner
-    bar_width = 120  # Reduced from 200
-    bar_height = 15  # Reduced from 20
-    bar_x = WIDTH - bar_width - 10  # Closer to right edge
-    bar_y = 10  # Closer to top edge
+    # Draw timer bar - centered below clue and above keyboard
+    bar_width = 200  # Wider bar for better visibility
+    bar_height = 8   # Thinner bar
+    bar_x = (WIDTH - bar_width) // 2  # Center horizontally
+    bar_y = 250  # Position below clue and above keyboard
     
     # Background bar (gray)
     pygame.draw.rect(screen, GRAY, (bar_x, bar_y, bar_width, bar_height))
@@ -1275,14 +1295,8 @@ def draw_timer():
         
     pygame.draw.rect(screen, color, (bar_x, bar_y, remaining_width, bar_height))
     
-    # Draw time text - smaller and next to the bar
-    timer_font = pygame.font.Font(None, 20)  # Reduced from 24
-    timer_text = f"{int(remaining_time)}s"
-    text_surface = timer_font.render(timer_text, True, BLACK)
-    screen.blit(text_surface, (bar_x + bar_width + 5, bar_y))
-    
     # Check if time is up
-    if remaining_time <= 0 and not game_over:
+    if remaining_time <= 0 and not game_over and not is_paused:
         show_word_flash(screen, selected_word['word'], RED, FONT)
         return True
     return False
