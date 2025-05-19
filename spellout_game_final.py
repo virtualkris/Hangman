@@ -20,6 +20,28 @@ RED = (222, 52, 52)  # Attempt indicator color (#de3434)
 ORANGE = (251, 179, 22)  # X mark and active level color (#fbb316)
 RECT_COLOR = (12, 192, 223)  # Rectangle color for letters (#0cc0df)
 
+# Load pre-game background
+pre_game_bg = pygame.image.load('assets/images/pre_game.png')
+pre_game_bg = pygame.transform.scale(pre_game_bg, (WIDTH, HEIGHT))
+
+# Load post-game background
+post_game_bg = pygame.image.load('assets/images/post_game.png')
+post_game_bg = pygame.transform.scale(post_game_bg, (WIDTH, HEIGHT))
+
+# Load tier backgrounds
+easy_tier_bg = pygame.image.load('assets/images/easy_tier.png')
+easy_tier_bg = pygame.transform.scale(easy_tier_bg, (WIDTH, HEIGHT))
+
+normal_tier_bg = pygame.image.load('assets/images/normal_tier.png')
+normal_tier_bg = pygame.transform.scale(normal_tier_bg, (WIDTH, HEIGHT))
+
+hard_tier_bg = pygame.image.load('assets/images/hard_tier.png')
+hard_tier_bg = pygame.transform.scale(hard_tier_bg, (WIDTH, HEIGHT))
+
+# Load records background
+records_bg = pygame.image.load('assets/images/records.png')
+records_bg = pygame.transform.scale(records_bg, (WIDTH, HEIGHT))
+
 # 🎨 Difficulty Button Colors
 EASY_COLOR = (71, 185, 112)  # Green (#47b970)
 NORMAL_COLOR = (12, 192, 223)  # Cyan (#0cc0df)
@@ -315,7 +337,16 @@ def show_game_manual():
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 manual_running = False
 
-        screen.fill((220, 220, 255))
+        # Draw background first
+        screen.blit(records_bg, (0, 0))
+        
+        # Create semi-transparent overlay
+        overlay = pygame.Surface((WIDTH, HEIGHT))
+        overlay.set_alpha(128)  # Adjust alpha for desired transparency
+        overlay.fill((255, 255, 255))
+        screen.blit(overlay, (0, 0))
+
+        # Create manual surface
         manual_surface = pygame.Surface((WIDTH - 100, HEIGHT - 100))
         manual_surface.fill((255, 255, 255))
         pygame.draw.rect(manual_surface, BLACK, manual_surface.get_rect(), 3)
@@ -328,7 +359,7 @@ def show_game_manual():
             icon = pygame.transform.scale(icon, (24, 24))
             manual_surface.blit(icon, (25, y_pos))
             text = text_font.render(line, True, (0, 0, 0))
-            manual_surface.blit(text, (60, y_pos))  # Position text after the icon
+            manual_surface.blit(text, (60, y_pos))
 
         screen.blit(manual_surface, (50, 50))
         pygame.display.flip()
@@ -550,7 +581,6 @@ def display_leaderboard(uid_input):
             timed_data = json.load(f)
 
     # Create leaderboard surface
-    screen.fill((220, 220, 255))
     board_surface = pygame.Surface((WIDTH - 100, HEIGHT - 100))
     board_surface.fill((240, 240, 240))
     pygame.draw.rect(board_surface, BLACK, board_surface.get_rect(), 3)
@@ -575,14 +605,22 @@ def display_leaderboard(uid_input):
     list_font = pygame.font.Font(None, 20)
     mode_font = pygame.font.Font(None, 28)
 
-    # Mode selection buttons
+    # Mode selection buttons - positioned relative to board_surface
     classic_button = pygame.Rect(board_surface.get_width() // 4 - 50, 20, 100, 30)
     timed_button = pygame.Rect(board_surface.get_width() * 3 // 4 - 50, 20, 100, 30)
     
     current_mode = "classic"  # Default mode to show
     
     while True:
-        screen.fill((220, 220, 255))
+        # Draw background first
+        screen.blit(records_bg, (0, 0))
+        
+        # Create semi-transparent overlay
+        overlay = pygame.Surface((WIDTH, HEIGHT))
+        overlay.set_alpha(128)  # Adjust alpha for desired transparency
+        overlay.fill((255, 255, 255))
+        screen.blit(overlay, (0, 0))
+
         board_surface.fill((240, 240, 240))
         pygame.draw.rect(board_surface, BLACK, board_surface.get_rect(), 3)
 
@@ -711,8 +749,6 @@ def show_last_record(uid_input):
         with open(TIMED_LEADERBOARD_FILE, 'r') as f:
             timed_data = json.load(f)
 
-    screen.fill((220, 220, 255))
-
     # Load icons
     x_icon = pygame.image.load("assets/icons/x_icon.png")
     x_icon = pygame.transform.scale(x_icon, (25, 25))
@@ -737,7 +773,15 @@ def show_last_record(uid_input):
     current_mode = "classic"  # Default mode to show
     
     while True:
-        screen.fill((220, 220, 255))
+        # Draw background first
+        screen.blit(records_bg, (0, 0))
+        
+        # Create semi-transparent overlay
+        overlay = pygame.Surface((WIDTH, HEIGHT))
+        overlay.set_alpha(128)  # Adjust alpha for desired transparency
+        overlay.fill((255, 255, 255))
+        screen.blit(overlay, (0, 0))
+
         manual_surface.fill((240, 240, 240))
         pygame.draw.rect(manual_surface, BLACK, manual_surface.get_rect(), 3)
 
@@ -818,7 +862,8 @@ def draw_game_controls(player_name=None, state='start'):
     quit_button_color = (255, 0, 0)    # Red
     leaderboard_button_color = (100, 150, 255)  # Blue
     last_record_button_color = (255, 223, 100)  # Yellow
-    text_color = (0, 0, 0)             # Black
+    text_color = (BLACK)
+    text_button_color = (WHITE)
 
     button_x = WIDTH // 2 - 80
     button_y = HEIGHT // 2 - 100
@@ -827,27 +872,32 @@ def draw_game_controls(player_name=None, state='start'):
     spacing = button_height + 10
     current_y = button_y + spacing
 
-    # Adjusted font sizes
-    title_font = pygame.font.Font(None, 36)  # Larger font for titles
-    button_font = pygame.font.Font(None, 28)  # Smaller font for buttons
+    font = pygame.font.Font(None, 35)
+    button_font = pygame.font.Font(None, 25)
     button_rects = {"classic": None, "timed": None, "quit": None, "leaderboard": None, "last_record": None}
 
     # Get mouse position for hover effects
     mouse_pos = pygame.mouse.get_pos()
+
+    # Draw appropriate background based on state
+    if state == 'start':
+        screen.blit(pre_game_bg, (0, 0))
+    elif state in ('over', 'complete'):
+        screen.blit(post_game_bg, (0, 0))
 
     # ✳️ STATE-SPECIFIC UI
     if state == 'start':
         text = f"Welcome {player_name}!"
         
         # Title Text
-        text_surface = title_font.render(text, True, text_color)
+        text_surface = font.render(text, True, text_color)
         screen.blit(text_surface, text_surface.get_rect(center=(WIDTH // 2, button_y - 30)))
 
         # CLASSIC MODE button
         classic_rect = pygame.Rect(button_x, button_y, button_width, button_height)
         classic_color = get_hover_color(button_color) if classic_rect.collidepoint(mouse_pos) else button_color
         pygame.draw.rect(screen, classic_color, classic_rect, border_radius=8)
-        classic_surface = button_font.render("CLASSIC MODE", True, text_color)
+        classic_surface = button_font.render("CLASSIC MODE", True, text_button_color)
         screen.blit(classic_surface, classic_surface.get_rect(center=(WIDTH // 2, button_y + button_height // 2)))
         button_rects["classic"] = classic_rect
 
@@ -855,26 +905,26 @@ def draw_game_controls(player_name=None, state='start'):
         timed_rect = pygame.Rect(button_x, current_y, button_width, button_height)
         timed_color = get_hover_color(leaderboard_button_color) if timed_rect.collidepoint(mouse_pos) else leaderboard_button_color
         pygame.draw.rect(screen, timed_color, timed_rect, border_radius=8)
-        timed_surface = button_font.render("TIMED MODE", True, text_color)
+        timed_surface = button_font.render("TIMED MODE", True, text_button_color)
         screen.blit(timed_surface, timed_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
         button_rects["timed"] = timed_rect
 
     elif state in ('over', 'complete'):
         if state == 'over':
-            text = "GAME OVER! WANT TO PLAY AGAIN?"
+            text = "GAME OVER! Want to try again?"
         else:
-            text = "CONGRATULATIONS! YOU COMPLETED ALL LEVELS!"
+            text = "CONGRATULATIONS! You completed all Levels!"
         play_text = "PLAY AGAIN"
 
         # Title Text
-        text_surface = title_font.render(text, True, text_color)
+        text_surface = font.render(text, True, text_color)
         screen.blit(text_surface, text_surface.get_rect(center=(WIDTH // 2, button_y - 30)))
 
         # PLAY AGAIN button
         play_rect = pygame.Rect(button_x, button_y, button_width, button_height)
         play_color = get_hover_color(button_color) if play_rect.collidepoint(mouse_pos) else button_color
         pygame.draw.rect(screen, play_color, play_rect, border_radius=8)
-        play_surface = button_font.render(play_text, True, text_color)
+        play_surface = button_font.render(play_text, True, text_button_color)
         screen.blit(play_surface, play_surface.get_rect(center=(WIDTH // 2, button_y + button_height // 2)))
         button_rects["classic"] = play_rect
 
@@ -882,7 +932,7 @@ def draw_game_controls(player_name=None, state='start'):
         lb_rect = pygame.Rect(button_x, current_y, button_width, button_height)
         lb_color = get_hover_color(leaderboard_button_color) if lb_rect.collidepoint(mouse_pos) else leaderboard_button_color
         pygame.draw.rect(screen, lb_color, lb_rect, border_radius=8)
-        lb_surface = button_font.render("LEADERBOARD", True, text_color)
+        lb_surface = button_font.render("LEADERBOARD", True, text_button_color)
         screen.blit(lb_surface, lb_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
         button_rects["leaderboard"] = lb_rect
 
@@ -891,7 +941,7 @@ def draw_game_controls(player_name=None, state='start'):
         lr_rect = pygame.Rect(button_x, current_y, button_width, button_height)
         lr_color = get_hover_color(last_record_button_color) if lr_rect.collidepoint(mouse_pos) else last_record_button_color
         pygame.draw.rect(screen, lr_color, lr_rect, border_radius=8)
-        lr_surface = button_font.render("LAST RECORD", True, text_color)
+        lr_surface = button_font.render("LAST RECORD", True, text_button_color)
         screen.blit(lr_surface, lr_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
         button_rects["last_record"] = lr_rect
 
@@ -900,7 +950,7 @@ def draw_game_controls(player_name=None, state='start'):
         quit_rect = pygame.Rect(button_x, current_y, button_width, button_height)
         quit_color = get_hover_color(quit_button_color) if quit_rect.collidepoint(mouse_pos) else quit_button_color
         pygame.draw.rect(screen, quit_color, quit_rect, border_radius=8)
-        quit_surface = button_font.render("QUIT", True, text_color)
+        quit_surface = button_font.render("QUIT", True, text_button_color)
         screen.blit(quit_surface, quit_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
         button_rects["quit"] = quit_rect
 
@@ -1026,8 +1076,12 @@ def get_current_tier(level):
 # Function to get background color based on level
 def get_background_color(level):
     current_tier = get_current_tier(level)
-    tier_index = (level - 1) % 5  # Get index within tier (0-4)
-    return tier_colors[current_tier][tier_index]
+    if current_tier == "Easy":
+        return easy_tier_bg
+    elif current_tier == "Normal":
+        return normal_tier_bg
+    else:  # Hard tier
+        return hard_tier_bg
 
 # Function to show tier completion screen
 def show_tier_completion(screen, tier, stars):
@@ -1354,13 +1408,12 @@ def play_spellout(uid_input, resumed=False):
     player_name = uid_input
 
     while running:
-        # Only use level-based background color during active gameplay
+        # Only use level-based background during active gameplay
         if game_started and not (game_over or level_completed):
-            current_bg_color = get_background_color(level)
+            current_bg = get_background_color(level)
+            screen.blit(current_bg, (0, 0))
         else:
-            current_bg_color = WHITE
-            
-        screen.fill(current_bg_color)
+            screen.fill(WHITE)
 
         if not game_started:
             # Draw game mode selection screen
