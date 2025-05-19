@@ -186,20 +186,26 @@ def update_player_record(uid, duration, level, game_mode):
             with open(leaderboard_file, 'r') as f:
                 data = json.load(f)
 
-        # Calculate stars based on game mode
+        # Calculate stars based on game mode and new requirements
         if game_mode == "timed":
             # For timed mode, count correctly guessed words
             correct_words = level  # level represents correctly guessed words
             stars = 0
-            if correct_words >= 10:
+            if correct_words >= 15:
                 stars = 3
-            elif correct_words >= 7:
+            elif correct_words >= 10:
                 stars = 2
-            elif correct_words >= 3:
+            elif correct_words >= 5:
                 stars = 1
         else:
             # Classic mode - stars based on levels completed
-            stars = 3 if level >= 10 else (2 if level >= 7 else (1 if level >= 3 else 0))
+            stars = 0
+            if level >= 15:
+                stars = 3
+            elif level >= 10:
+                stars = 2
+            elif level >= 5:
+                stars = 1
 
         # Create new record
         new_record = {
@@ -1239,10 +1245,11 @@ def show_word_flash(screen, word, color, font):
 
 # Function to draw timer
 def draw_timer():
-    if game_mode != "timed" or selected_difficulty == "Easy":
-        return
+    current_tier = get_current_tier(level)
+    if game_mode != "timed":
+        return False
         
-    time_limit = time_limits[selected_difficulty]
+    time_limit = time_limits[current_tier]
     elapsed_time = time.time() - word_start_time
     remaining_time = max(0, time_limit - elapsed_time)
     
@@ -1347,57 +1354,28 @@ def play_spellout(uid_input, resumed=False):
             draw_levels(level)
             
             if game_mode == "timed":
-                current_tier = get_current_tier(level)
-                time_limit = time_limits[current_tier] + total_time_bonus
-                elapsed_time = time.time() - word_start_time
-                remaining_time = max(0, time_limit - elapsed_time)
-                
-                # Draw timer
-                bar_width = 120
-                bar_height = 15
-                bar_x = WIDTH - bar_width - 10
-                bar_y = 10
-                
-                pygame.draw.rect(screen, GRAY, (bar_x, bar_y, bar_width, bar_height))
-                remaining_ratio = remaining_time / time_limit
-                remaining_width = int(bar_width * remaining_ratio)
-                
-                if remaining_ratio > 0.6:
-                    color = EASY_COLOR
-                elif remaining_ratio > 0.3:
-                    color = ORANGE
-                else:
-                    color = RED
-                    
-                pygame.draw.rect(screen, color, (bar_x, bar_y, remaining_width, bar_height))
-                
-                timer_font = pygame.font.Font(None, 20)
-                timer_text = f"{int(remaining_time)}s"
-                text_surface = timer_font.render(timer_text, True, BLACK)
-                screen.blit(text_surface, (bar_x + bar_width + 5, bar_y))
-                
-                if remaining_time <= 0:
+                if draw_timer():  # If time is up
                     show_word_flash(screen, selected_word['word'], RED, FONT)
                     pygame.time.delay(1000)
                     
-                    if level < 15:
-                        # Check for tier completion before incrementing level
-                        time_bonus = handle_word_completion(screen, level, game_mode, total_time_bonus)
-                        total_time_bonus += time_bonus
-                        
-                        level += 1
-                        guessed_letters.clear()
-                        attempts = 4
-                        
-                        if level < 15:  # Only get new word if not at max level
-                            selected_word = get_word_for_level(level)
-                            word_start_time = time.time()
-                        else:  # At level 15
-                            end_time = time.time()
-                            duration = end_time - start_time
-                            level_completed = True
-                            update_player_record(uid_input, duration, correct_words if game_mode == "timed" else level, game_mode)
-                            show_last_record(uid_input)
+                    # Check for tier completion before incrementing level
+                    time_bonus = handle_word_completion(screen, level, game_mode, total_time_bonus)
+                    total_time_bonus += time_bonus
+                    
+                    level += 1
+                    guessed_letters.clear()
+                    attempts = 4
+                    
+                    # Handle level 15 completion
+                    if level > 15:  # After completing level 15
+                        end_time = time.time()
+                        duration = end_time - start_time
+                        level_completed = True
+                        update_player_record(uid_input, duration, correct_words, game_mode)
+                        show_last_record(uid_input)
+                    else:  # Levels 1-15
+                        selected_word = get_word_for_level(level)
+                        word_start_time = time.time()
 
         pygame.display.flip()
         pygame.time.delay(100)
@@ -1453,26 +1431,26 @@ def play_spellout(uid_input, resumed=False):
                                     show_word_flash(screen, selected_word['word'], (0, 255, 0), FONT)
                                     pygame.time.delay(500)
                                     
-                                    if level < 15:
-                                        # Check for tier completion before incrementing level
-                                        time_bonus = handle_word_completion(screen, level, game_mode, total_time_bonus)
-                                        total_time_bonus += time_bonus
-                                        
-                                        level += 1
-                                        if game_mode == "timed":
-                                            correct_words += 1
-                                        guessed_letters.clear()
-                                        attempts = 4
-                                        
-                                        if level < 15:  # Only get new word if not at max level
-                                            selected_word = get_word_for_level(level)
-                                            word_start_time = time.time()
-                                        else:  # At level 15
-                                            end_time = time.time()
-                                            duration = end_time - start_time
-                                            level_completed = True
-                                            update_player_record(uid_input, duration, correct_words if game_mode == "timed" else level, game_mode)
-                                            show_last_record(uid_input)
+                                    # Check for tier completion before incrementing level
+                                    time_bonus = handle_word_completion(screen, level, game_mode, total_time_bonus)
+                                    total_time_bonus += time_bonus
+                                    
+                                    level += 1
+                                    if game_mode == "timed":
+                                        correct_words += 1
+                                    guessed_letters.clear()
+                                    attempts = 4
+                                    
+                                    # Handle level completion
+                                    if level > 15:  # After completing level 15
+                                        end_time = time.time()
+                                        duration = end_time - start_time
+                                        level_completed = True
+                                        update_player_record(uid_input, duration, correct_words if game_mode == "timed" else level - 1, game_mode)
+                                        show_last_record(uid_input)
+                                    else:  # Levels 1-15
+                                        selected_word = get_word_for_level(level)
+                                        word_start_time = time.time()
                             else:
                                 attempts -= 1
                                 wrong_sound.play()
@@ -1490,26 +1468,26 @@ def play_spellout(uid_input, resumed=False):
                                 show_word_flash(screen, selected_word['word'], (0, 255, 0), FONT)
                                 pygame.time.delay(500)
                                 
-                                if level < 15:
-                                    # Check for tier completion before incrementing level
-                                    time_bonus = handle_word_completion(screen, level, game_mode, total_time_bonus)
-                                    total_time_bonus += time_bonus
-                                    
-                                    level += 1
-                                    if game_mode == "timed":
-                                        correct_words += 1
-                                    guessed_letters.clear()
-                                    attempts = 4
-                                    
-                                    if level < 15:  # Only get new word if not at max level
-                                        selected_word = get_word_for_level(level)
-                                        word_start_time = time.time()
-                                    else:  # At level 15
-                                        end_time = time.time()
-                                        duration = end_time - start_time
-                                        level_completed = True
-                                        update_player_record(uid_input, duration, correct_words if game_mode == "timed" else level, game_mode)
-                                        show_last_record(uid_input)
+                                # Check for tier completion before incrementing level
+                                time_bonus = handle_word_completion(screen, level, game_mode, total_time_bonus)
+                                total_time_bonus += time_bonus
+                                
+                                level += 1
+                                if game_mode == "timed":
+                                    correct_words += 1
+                                guessed_letters.clear()
+                                attempts = 4
+                                
+                                # Handle level completion
+                                if level > 15:  # After completing level 15
+                                    end_time = time.time()
+                                    duration = end_time - start_time
+                                    level_completed = True
+                                    update_player_record(uid_input, duration, correct_words if game_mode == "timed" else level - 1, game_mode)
+                                    show_last_record(uid_input)
+                                else:  # Levels 1-15
+                                    selected_word = get_word_for_level(level)
+                                    word_start_time = time.time()
                         else:
                             attempts -= 1
                             wrong_sound.play()
