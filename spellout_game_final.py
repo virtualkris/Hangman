@@ -20,6 +20,31 @@ RED = (222, 52, 52)  # Attempt indicator color (#de3434)
 ORANGE = (251, 179, 22)  # X mark and active level color (#fbb316)
 RECT_COLOR = (12, 192, 223)  # Rectangle color for letters (#0cc0df)
 
+# Tier-based color schemes
+TIER_COLORS = {
+    "Easy": {
+        "tier_text": (71, 185, 112),      # #47b970
+        "clue_text": (107, 203, 143),     # #6bcb8f
+        "word_box": (168, 230, 193),      # #a8e6c1
+        "keyboard": (74, 157, 92),        # #4a9d5c
+        "keyboard_guessed": (200, 230, 210)  # Lighter green for guessed keys
+    },
+    "Normal": {
+        "tier_text": (12, 192, 223),      # #0cc0df
+        "clue_text": (77, 206, 231),      # #4dcee7
+        "word_box": (142, 227, 240),      # #8ee3f0
+        "keyboard": (10, 158, 184),       # #0a9eb8
+        "keyboard_guessed": (200, 230, 235)  # Lighter cyan for guessed keys
+    },
+    "Hard": {
+        "tier_text": (222, 52, 52),       # #de3434
+        "clue_text": (230, 92, 92),       # #e65c5c
+        "word_box": (240, 142, 142),      # #f08e8e
+        "keyboard": (184, 42, 42),        # #b82a2a
+        "keyboard_guessed": (235, 200, 200)  # Lighter red for guessed keys
+    }
+}
+
 # Load pre-game background
 pre_game_bg = pygame.image.load('assets/images/pre_game.png')
 pre_game_bg = pygame.transform.scale(pre_game_bg, (WIDTH, HEIGHT))
@@ -413,6 +438,7 @@ def uid_screen():
     # Random name button
     button_font = pygame.font.Font(None, 32)
     random_button = pygame.Rect(WIDTH // 2 - 75, HEIGHT // 2 + 85, 150, 40)
+    random_button_color = (50, 150, 205)  # Base color for random button
 
     # ❓ Help/manual button in lower right
     help_button = pygame.Rect(WIDTH - 50, HEIGHT - 50, 35, 35)
@@ -449,23 +475,25 @@ def uid_screen():
 
         # Draw label above input box
         label_font = pygame.font.Font(None, 25)
-        label_surface = label_font.render("Enter player name", True, GRAY)
+        label_surface = label_font.render("Enter player name", True, BLACK)
         label_rect = label_surface.get_rect(center=(WIDTH // 2, input_box.y - 20))
         screen.blit(label_surface, label_rect)
 
         # Draw input box
         pygame.draw.rect(screen, color, input_box, 2)
-        text_surface = font.render(uid_input, True, (0, 0, 0))
+        text_surface = font.render(uid_input, True, BLACK)
         screen.blit(text_surface, (input_box.x + 10, input_box.y + 10))
 
         # Draw "or" below input box
-        or_surface = label_font.render("or", True, GRAY)
+        or_surface = label_font.render("or", True, BLACK)
         or_rect = or_surface.get_rect(center=(WIDTH // 2, input_box.y + 60))
         screen.blit(or_surface, or_rect)
 
-        # Draw random name button
-        pygame.draw.rect(screen, (100, 200, 255), random_button, border_radius=8)
-        button_text = button_font.render("Random", True, (0, 0, 0))
+        # Draw random name button with hover effect
+        mouse_pos = pygame.mouse.get_pos()
+        current_random_color = get_hover_color(random_button_color) if random_button.collidepoint(mouse_pos) else random_button_color
+        pygame.draw.rect(screen, current_random_color, random_button, border_radius=8)
+        button_text = button_font.render("Random", True, WHITE)
         text_rect = button_text.get_rect(center=(
             random_button.x + random_button.width // 2,
             random_button.y + random_button.height // 2
@@ -624,10 +652,15 @@ def display_leaderboard(uid_input):
         board_surface.fill((240, 240, 240))
         pygame.draw.rect(board_surface, BLACK, board_surface.get_rect(), 3)
 
-        # Draw mode buttons
+        # Get mouse position for hover effects
+        mouse_pos = pygame.mouse.get_pos()
+        board_pos = (mouse_pos[0] - 50, mouse_pos[1] - 50)  # Adjust for board position
+
+        # Draw mode buttons with hover effects
         for button, text, mode in [(classic_button, "Classic", "classic"), 
                                  (timed_button, "Timed", "timed")]:
-            color = BLUE if mode == current_mode else GRAY
+            base_color = BLUE if mode == current_mode else GRAY
+            color = get_hover_color(base_color) if button.collidepoint(board_pos) else base_color
             pygame.draw.rect(board_surface, color, button, border_radius=5)
             text_surface = mode_font.render(text, True, WHITE if mode == current_mode else BLACK)
             text_rect = text_surface.get_rect(center=button.center)
@@ -785,10 +818,15 @@ def show_last_record(uid_input):
         manual_surface.fill((240, 240, 240))
         pygame.draw.rect(manual_surface, BLACK, manual_surface.get_rect(), 3)
 
-        # Draw mode buttons
+        # Get mouse position for hover effects
+        mouse_pos = pygame.mouse.get_pos()
+        board_pos = (mouse_pos[0] - 50, mouse_pos[1] - 50)  # Adjust for board position
+
+        # Draw mode buttons with hover effects
         for button, text, mode in [(classic_button, "Classic", "classic"), 
                                  (timed_button, "Timed", "timed")]:
-            color = BLUE if mode == current_mode else GRAY
+            base_color = BLUE if mode == current_mode else GRAY
+            color = get_hover_color(base_color) if button.collidepoint(board_pos) else base_color
             pygame.draw.rect(manual_surface, color, button, border_radius=5)
             text_surface = mode_font.render(text, True, WHITE if mode == current_mode else BLACK)
             text_rect = text_surface.get_rect(center=button.center)
@@ -859,7 +897,7 @@ def get_hover_color(base_color):
 # 🎮 Function to draw game controls
 def draw_game_controls(player_name=None, state='start'):
     button_color = (71, 185, 112)      # Green
-    quit_button_color = (255, 0, 0)    # Red
+    quit_button_color = (222, 52, 52)  # Red (#de3434)
     leaderboard_button_color = (100, 150, 255)  # Blue
     last_record_button_color = (255, 223, 100)  # Yellow
     text_color = (BLACK)
@@ -955,7 +993,6 @@ def draw_game_controls(player_name=None, state='start'):
         button_rects["quit"] = quit_rect
 
     return button_rects
-
 
 # Functions to save the game state
 def pause_menu(uid_input, level, attempts, guessed_letters, selected_word, selected_difficulty, shuffled_words):
@@ -1193,19 +1230,22 @@ def draw_word(selected_word, guessed_letters):
     if not game_started or game_over:
         return  # Only draw if game is active
 
-    # 🏷️ Display Tier and Category Name
+    # Get current tier colors
     current_tier = get_current_tier(level)
+    colors = TIER_COLORS[current_tier]
+
+    # 🏷️ Display Tier and Category Name
     category_name = category_by_tier.get(current_tier, "Unknown Category")
     tier_text = f"Tier: {current_tier}"
     category_text = f"Category: {category_name}"
     
     # Render tier text
-    tier_surface = CATEGORY_FONT.render(tier_text, True, (80, 80, 80))
+    tier_surface = CATEGORY_FONT.render(tier_text, True, colors["tier_text"])
     tier_rect = tier_surface.get_rect(center=(WIDTH // 2, 110))
     screen.blit(tier_surface, tier_rect)
     
     # Render category text
-    category_surface = CATEGORY_FONT.render(category_text, True, (80, 80, 80))
+    category_surface = CATEGORY_FONT.render(category_text, True, colors["tier_text"])
     category_rect = category_surface.get_rect(center=(WIDTH // 2, 130))
     screen.blit(category_surface, category_rect)
 
@@ -1224,15 +1264,15 @@ def draw_word(selected_word, guessed_letters):
             continue
 
         rect_x = x_start + i * (cell_size + 5)  # Normal letter positions
-        pygame.draw.rect(screen, RECT_COLOR, (rect_x, y_start, cell_size, cell_size), border_radius=5)
+        pygame.draw.rect(screen, colors["word_box"], (rect_x, y_start, cell_size, cell_size), border_radius=5)
 
         if letter in guessed_letters:
-            text_surface = LETTER_FONT.render(letter, True, WHITE)
+            text_surface = LETTER_FONT.render(letter, True, colors["tier_text"])
             text_rect = text_surface.get_rect(center=(rect_x + cell_size // 2, y_start + cell_size // 2))
             screen.blit(text_surface, text_rect)
 
-    clue_surface = CLUE_FONT.render(f"Clue: {clue}", True, (100, 100, 100))  # Render clue in a smaller font
-    clue_rect = clue_surface.get_rect(center=(WIDTH // 2, y_start + cell_size + 40))  # Positioned below the word panel
+    clue_surface = CLUE_FONT.render(f"Clue: {clue}", True, colors["clue_text"])
+    clue_rect = clue_surface.get_rect(center=(WIDTH // 2, y_start + cell_size + 40))
     screen.blit(clue_surface, clue_rect)
 
 # ⌨️ Function to create a **QWERTY-based virtual keyboard**
@@ -1264,10 +1304,14 @@ def draw_virtual_keyboard(keys, guessed_letters):
     if not game_started or game_over:
         return # Draw the keyboard only if the game is active
     
+    # Get current tier colors
+    current_tier = get_current_tier(level)
+    colors = TIER_COLORS[current_tier]
+    
     for letter, rect in keys.items():
-        color = GRAY if letter in guessed_letters else BLUE  # Change color when guessed
+        color = colors["keyboard_guessed"] if letter in guessed_letters else colors["keyboard"]
         pygame.draw.rect(screen, color, rect, border_radius=5)  # Draw key
-        text_surface = BUTTON_FONT.render(letter, True, BLACK)  # Render letter (always white)
+        text_surface = BUTTON_FONT.render(letter, True, WHITE)  # Keep text white for contrast
         screen.blit(text_surface, (rect.x + 10, rect.y + 5))  # Position text at center
 
 # Function to draw attempt indicators
