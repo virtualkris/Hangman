@@ -6,6 +6,7 @@ import os  # Import os for file handling
 import time  # Import time for delays
 from datetime import datetime  # Import datetime for timestamping
 from PIL import Image, ImageSequence  # Import Image for GIF handling
+import math  # Import math for animations
 
 # Initialize Pygame
 pygame.init()
@@ -23,25 +24,25 @@ RECT_COLOR = (12, 192, 223)  # Rectangle color for letters (#0cc0df)
 # Tier-based color schemes
 TIER_COLORS = {
     "Easy": {
-        "tier_text": (71, 185, 112),      # #47b970
-        "clue_text": (107, 203, 143),     # #6bcb8f
-        "word_box": (168, 230, 193),      # #a8e6c1
-        "keyboard": (74, 157, 92),        # #4a9d5c
-        "keyboard_guessed": (200, 230, 210)  # Lighter green for guessed keys
+        "tier_text": (65, 120, 189),      # #4178bd - Base color
+        "clue_text": (255, 255, 255),     # Lighter blue for better readability
+        "word_box": (168, 200, 230),      # Very light blue for word boxes
+        "keyboard": (65, 120, 189),       # #4178bd - Base color for keyboard
+        "keyboard_guessed": (200, 220, 240)  # Light blue for guessed keys
     },
     "Normal": {
-        "tier_text": (12, 192, 223),      # #0cc0df
-        "clue_text": (77, 206, 231),      # #4dcee7
-        "word_box": (142, 227, 240),      # #8ee3f0
-        "keyboard": (10, 158, 184),       # #0a9eb8
-        "keyboard_guessed": (200, 230, 235)  # Lighter cyan for guessed keys
+        "tier_text": (12, 73, 116),       # #0c4974 - Base color
+        "clue_text": (255, 255, 255),      # Lighter navy for better readability
+        "word_box": (142, 177, 200),      # Light navy for word boxes
+        "keyboard": (12, 73, 116),        # #0c4974 - Base color for keyboard
+        "keyboard_guessed": (200, 215, 230)  # Light navy for guessed keys
     },
     "Hard": {
-        "tier_text": (222, 52, 52),       # #de3434
-        "clue_text": (230, 92, 92),       # #e65c5c
-        "word_box": (240, 142, 142),      # #f08e8e
-        "keyboard": (184, 42, 42),        # #b82a2a
-        "keyboard_guessed": (235, 200, 200)  # Lighter red for guessed keys
+        "tier_text": (255, 145, 77),      # #ff914d - Base color
+        "clue_text": (255, 165, 107),     # Lighter orange for better readability
+        "word_box": (255, 200, 167),      # Light orange for word boxes
+        "keyboard": (255, 145, 77),       # #ff914d - Base color for keyboard
+        "keyboard_guessed": (255, 230, 215)  # Light orange for guessed keys
     }
 }
 
@@ -203,6 +204,9 @@ TIMED_LEADERBOARD_FILE = "data/timed_leaderboard.json"
 correct_sound = pygame.mixer.Sound("assets/sounds/correct.mp3")
 wrong_sound = pygame.mixer.Sound("assets/sounds/wrong-2.mp3")
 warning_sound = pygame.mixer.Sound("assets/sounds/warning.mp3")
+
+# Add after the other sound loading
+game_over_sound = pygame.mixer.Sound("assets/sounds/negative_beeps-6008.mp3")
 
 # Random name generator
 def generate_random_name():
@@ -900,15 +904,38 @@ def draw_game_controls(player_name=None, state='start'):
     quit_button_color = (222, 52, 52)  # Red (#de3434)
     leaderboard_button_color = (100, 150, 255)  # Blue
     last_record_button_color = (255, 223, 100)  # Yellow
-    text_color = (BLACK)
-    text_button_color = (WHITE)
+    
+    # Separate text colors for different screens
+    pre_game_text_color = BLACK
+    post_game_text_color = (12, 73, 116)
+    text_button_color = WHITE  # Button text color remains white for both screens
 
-    button_x = WIDTH // 2 - 80
-    button_y = HEIGHT // 2 - 100
+    # Common button dimensions
     button_width = 160
     button_height = 50
-    spacing = button_height + 10
-    current_y = button_y + spacing
+    
+    # Use consistent spacing for all screens
+    spacing = 10
+    
+    # Separate vertical offsets for different screens
+    pre_game_offset = 0  # Offset for welcome screen
+    post_game_offset = -35  # Offset for game over/complete screen
+    
+    # Calculate total height of elements based on state
+    if state == 'start':
+        total_height = 30 + button_height + spacing + button_height  # Title + 2 buttons + spacing
+        vertical_offset = pre_game_offset
+        text_color = pre_game_text_color
+    else:
+        total_height = 30 + button_height + spacing * 3 + button_height  # Title + 4 buttons + spacings
+        vertical_offset = post_game_offset
+        text_color = post_game_text_color
+    
+    # Start position for first element
+    start_y = (HEIGHT - total_height) // 2 + vertical_offset  # Adjust vertical_offset to move everything up/down
+    
+    button_x = WIDTH // 2 - button_width // 2
+    current_y = start_y + 30  # Adjust this value (30) to change space between title and first button
 
     font = pygame.font.Font(None, 35)
     button_font = pygame.font.Font(None, 25)
@@ -927,19 +954,20 @@ def draw_game_controls(player_name=None, state='start'):
     if state == 'start':
         text = f"Welcome {player_name}!"
         
-        # Title Text
+        # Title Text - Position controlled by start_y
         text_surface = font.render(text, True, text_color)
-        screen.blit(text_surface, text_surface.get_rect(center=(WIDTH // 2, button_y - 30)))
+        screen.blit(text_surface, text_surface.get_rect(center=(WIDTH // 2, start_y)))
 
-        # CLASSIC MODE button
-        classic_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+        # CLASSIC MODE button - Position controlled by current_y
+        classic_rect = pygame.Rect(button_x, current_y, button_width, button_height)
         classic_color = get_hover_color(button_color) if classic_rect.collidepoint(mouse_pos) else button_color
         pygame.draw.rect(screen, classic_color, classic_rect, border_radius=8)
         classic_surface = button_font.render("CLASSIC MODE", True, text_button_color)
-        screen.blit(classic_surface, classic_surface.get_rect(center=(WIDTH // 2, button_y + button_height // 2)))
+        screen.blit(classic_surface, classic_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
         button_rects["classic"] = classic_rect
 
-        # TIMED MODE button
+        # TIMED MODE button - Position controlled by current_y + spacing
+        current_y += button_height + spacing
         timed_rect = pygame.Rect(button_x, current_y, button_width, button_height)
         timed_color = get_hover_color(leaderboard_button_color) if timed_rect.collidepoint(mouse_pos) else leaderboard_button_color
         pygame.draw.rect(screen, timed_color, timed_rect, border_radius=8)
@@ -954,19 +982,20 @@ def draw_game_controls(player_name=None, state='start'):
             text = "CONGRATULATIONS! You completed all Levels!"
         play_text = "PLAY AGAIN"
 
-        # Title Text
+        # Title Text - Position controlled by start_y
         text_surface = font.render(text, True, text_color)
-        screen.blit(text_surface, text_surface.get_rect(center=(WIDTH // 2, button_y - 30)))
+        screen.blit(text_surface, text_surface.get_rect(center=(WIDTH // 2, start_y)))
 
-        # PLAY AGAIN button
-        play_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+        # PLAY AGAIN button - Position controlled by current_y
+        play_rect = pygame.Rect(button_x, current_y, button_width, button_height)
         play_color = get_hover_color(button_color) if play_rect.collidepoint(mouse_pos) else button_color
         pygame.draw.rect(screen, play_color, play_rect, border_radius=8)
         play_surface = button_font.render(play_text, True, text_button_color)
-        screen.blit(play_surface, play_surface.get_rect(center=(WIDTH // 2, button_y + button_height // 2)))
+        screen.blit(play_surface, play_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
         button_rects["classic"] = play_rect
 
-        # LEADERBOARD
+        # LEADERBOARD - Position controlled by current_y + spacing
+        current_y += button_height + spacing
         lb_rect = pygame.Rect(button_x, current_y, button_width, button_height)
         lb_color = get_hover_color(leaderboard_button_color) if lb_rect.collidepoint(mouse_pos) else leaderboard_button_color
         pygame.draw.rect(screen, lb_color, lb_rect, border_radius=8)
@@ -974,8 +1003,8 @@ def draw_game_controls(player_name=None, state='start'):
         screen.blit(lb_surface, lb_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
         button_rects["leaderboard"] = lb_rect
 
-        # LAST RECORD
-        current_y += spacing
+        # LAST RECORD - Position controlled by current_y + spacing
+        current_y += button_height + spacing
         lr_rect = pygame.Rect(button_x, current_y, button_width, button_height)
         lr_color = get_hover_color(last_record_button_color) if lr_rect.collidepoint(mouse_pos) else last_record_button_color
         pygame.draw.rect(screen, lr_color, lr_rect, border_radius=8)
@@ -983,8 +1012,8 @@ def draw_game_controls(player_name=None, state='start'):
         screen.blit(lr_surface, lr_surface.get_rect(center=(WIDTH // 2, current_y + button_height // 2)))
         button_rects["last_record"] = lr_rect
 
-        # QUIT
-        current_y += spacing
+        # QUIT - Position controlled by current_y + spacing
+        current_y += button_height + spacing
         quit_rect = pygame.Rect(button_x, current_y, button_width, button_height)
         quit_color = get_hover_color(quit_button_color) if quit_rect.collidepoint(mouse_pos) else quit_button_color
         pygame.draw.rect(screen, quit_color, quit_rect, border_radius=8)
@@ -1301,6 +1330,7 @@ def create_virtual_keyboard():
 
 # ⌨️ Function to draw the virtual keyboard
 def draw_virtual_keyboard(keys, guessed_letters):
+    """Draw the virtual keyboard with proper letter highlighting"""
     if not game_started or game_over:
         return # Draw the keyboard only if the game is active
     
@@ -1308,11 +1338,31 @@ def draw_virtual_keyboard(keys, guessed_letters):
     current_tier = get_current_tier(level)
     colors = TIER_COLORS[current_tier]
     
+    # Create a surface for the keyboard
+    keyboard_surface = pygame.Surface((WIDTH, 150))
+    keyboard_surface.set_colorkey((0, 0, 0))  # Make black transparent
+    
+    # Draw each key on the keyboard surface
     for letter, rect in keys.items():
-        color = colors["keyboard_guessed"] if letter in guessed_letters else colors["keyboard"]
-        pygame.draw.rect(screen, color, rect, border_radius=5)  # Draw key
-        text_surface = BUTTON_FONT.render(letter, True, WHITE)  # Keep text white for contrast
-        screen.blit(text_surface, (rect.x + 10, rect.y + 5))  # Position text at center
+        # Create a new rect relative to the keyboard surface
+        key_rect = pygame.Rect(rect.x, rect.y - 300, rect.width, rect.height)
+        
+        # Determine key color based on whether it's been guessed
+        if letter in guessed_letters:
+            color = colors["keyboard_guessed"]
+        else:
+            color = colors["keyboard"]
+            
+        # Draw the key
+        pygame.draw.rect(keyboard_surface, color, key_rect, border_radius=5)
+        
+        # Draw the letter
+        text_surface = BUTTON_FONT.render(letter, True, WHITE)
+        text_rect = text_surface.get_rect(center=key_rect.center)
+        keyboard_surface.blit(text_surface, text_rect)
+    
+    # Blit the keyboard surface onto the main screen
+    screen.blit(keyboard_surface, (0, 300))
 
 # Function to draw attempt indicators
 def draw_attempts(attempts):
@@ -1344,7 +1394,6 @@ def draw_attempts(attempts):
         y_pos = y_start + 10  # 📌 Center X within the rectangle
         text_surface = X_FONT.render("X", True, ORANGE)  # 🎨 X in #fbb316
         screen.blit(text_surface, (x_pos, y_pos))  # 🖥️ Display X mark
-
 
 # 🔤 Function to show the word flash
 def show_word_flash(screen, word, color, font):
@@ -1421,7 +1470,128 @@ def handle_word_completion(screen, current_level, game_mode, total_time_bonus):
         show_tier_completion(screen, "Hard", 3)
     return 0  # No time bonus
 
-# 🎮 Main game function
+# Add these new functions after the get_hover_color function
+
+def animate_word_panel(screen, word, guessed_letters, animation_type, progress):
+    """Animate the word panel based on the animation type and progress (0.0 to 1.0)"""
+    # Get current tier colors
+    current_tier = get_current_tier(level)
+    colors = TIER_COLORS[current_tier]
+
+    # Base positions and sizes
+    x_start = WIDTH // 2 - (len(word.replace(" ", "")) * 45) // 2
+    y_start = 150
+    cell_size = 40
+
+    if animation_type == "shake":
+        # Shake animation for wrong guesses
+        shake_amount = 15 * (1 - progress)  # Increased shake amount
+        x_offset = math.sin(progress * 25) * shake_amount  # Faster oscillation
+        x_start += x_offset
+    elif animation_type == "pop":
+        # Pop animation for correct guesses
+        scale = 1 + 0.15 * math.sin(progress * math.pi)  # Subtler pop effect
+        cell_size = int(40 * scale)
+        x_start = WIDTH // 2 - (len(word.replace(" ", "")) * (cell_size + 5)) // 2
+        y_start = 150 - (cell_size - 40) // 2  # Adjust y position to keep center
+
+    # Draw the word's letters
+    for i, letter in enumerate(word):
+        if letter == " ":
+            x_start += cell_size + 5
+            continue
+
+        rect_x = x_start + i * (cell_size + 5)
+        pygame.draw.rect(screen, colors["word_box"], (rect_x, y_start, cell_size, cell_size), border_radius=5)
+
+        if letter in guessed_letters:
+            text_surface = LETTER_FONT.render(letter, True, colors["tier_text"])
+            text_rect = text_surface.get_rect(center=(rect_x + cell_size // 2, y_start + cell_size // 2))
+            screen.blit(text_surface, text_rect)
+
+def animate_word_panel_sequence(screen, word, guessed_letters, animation_type):
+    """Run the animation sequence for the word panel"""
+    clock = pygame.time.Clock()
+    start_time = time.time()
+    duration = 0.4  # Slightly faster animation
+
+    # Store the current state of the screen
+    screen_copy = screen.copy()
+
+    while True:
+        current_time = time.time()
+        progress = (current_time - start_time) / duration
+
+        if progress >= 1.0:
+            break
+
+        # Restore the screen state
+        screen.blit(screen_copy, (0, 0))
+
+        # Draw the animated word panel
+        animate_word_panel(screen, word, guessed_letters, animation_type, progress)
+        
+        pygame.display.flip()
+        clock.tick(60)
+
+def reveal_word_animation(screen, word, guessed_letters, progress):
+    """Animate the reveal of the correct word"""
+    # Get current tier colors
+    current_tier = get_current_tier(level)
+    colors = TIER_COLORS[current_tier]
+
+    # Base positions and sizes
+    x_start = WIDTH // 2 - (len(word.replace(" ", "")) * 45) // 2
+    y_start = 150
+    cell_size = 40
+
+    # Calculate how many letters to reveal based on progress
+    total_letters = len(word.replace(" ", ""))
+    # Adjust progress to ensure last letter is revealed
+    adjusted_progress = min(1.0, progress * 1.1)  # Multiply by 1.1 to ensure full reveal
+    letters_to_reveal = int(total_letters * adjusted_progress)
+    
+    # Draw the word's letters
+    for i, letter in enumerate(word):
+        if letter == " ":
+            x_start += cell_size + 5
+            continue
+
+        rect_x = x_start + i * (cell_size + 5)
+        pygame.draw.rect(screen, colors["word_box"], (rect_x, y_start, cell_size, cell_size), border_radius=5)
+
+        # Reveal letters based on progress
+        if i < letters_to_reveal or letter in guessed_letters:
+            text_surface = LETTER_FONT.render(letter, True, colors["tier_text"])
+            text_rect = text_surface.get_rect(center=(rect_x + cell_size // 2, y_start + cell_size // 2))
+            screen.blit(text_surface, text_rect)
+
+def reveal_word_sequence(screen, word, guessed_letters):
+    """Run the word reveal animation sequence"""
+    clock = pygame.time.Clock()
+    start_time = time.time()
+    duration = 1.0  # 1 second reveal animation
+
+    # Store the current state of the screen
+    screen_copy = screen.copy()
+
+    while True:
+        current_time = time.time()
+        progress = (current_time - start_time) / duration
+
+        if progress >= 1.0:
+            break
+
+        # Restore the screen state
+        screen.blit(screen_copy, (0, 0))
+
+        # Draw the word reveal animation
+        reveal_word_animation(screen, word, guessed_letters, progress)
+        
+        pygame.display.flip()
+        clock.tick(60)
+
+# Modify the play_spellout function to use the new animation behavior
 def play_spellout(uid_input, resumed=False):
     global game_started, game_over, level_completed, difficulty_selected
     global selected_word, shuffled_words, guessed_letters, attempts, level, game_mode, word_start_time
@@ -1475,7 +1645,12 @@ def play_spellout(uid_input, resumed=False):
             
             if game_mode == "timed":
                 if draw_timer():  # If time is up
-                    show_word_flash(screen, selected_word['word'], RED, FONT)
+                    # Play game over sound
+                    game_over_sound.play()
+                    
+                    # Reveal the correct word with animation
+                    reveal_word_sequence(screen, selected_word['word'], guessed_letters)
+                    
                     pygame.time.delay(1000)
                     
                     # Check for tier completion before incrementing level
@@ -1545,13 +1720,38 @@ def play_spellout(uid_input, resumed=False):
                     for letter, rect in keys.items():
                         if rect.collidepoint(mouse_pos) and letter not in guessed_letters:
                             guessed_letters.add(letter)
+                            
+                            # Update the display immediately to show the key change
+                            if game_started and not (game_over or level_completed):
+                                current_bg = get_background_color(level)
+                                screen.blit(current_bg, (0, 0))
+                                draw_word(selected_word, guessed_letters)
+                                draw_virtual_keyboard(keys, guessed_letters)
+                                draw_attempts(attempts)
+                                draw_levels(level)
+                                pygame.display.flip()
+                            
+                            # Process the guess
                             if letter in selected_word['word']:
                                 correct_sound.play()
                                 if all(l in guessed_letters for l in selected_word['word']):
-                                    show_word_flash(screen, selected_word['word'], (0, 255, 0), FONT)
+                                    # Store current state for animation
+                                    current_guessed_letters = guessed_letters.copy()
+                                    
+                                    # Update display one more time before animation
+                                    current_bg = get_background_color(level)
+                                    screen.blit(current_bg, (0, 0))
+                                    draw_word(selected_word, current_guessed_letters)
+                                    draw_virtual_keyboard(keys, current_guessed_letters)
+                                    draw_attempts(attempts)
+                                    draw_levels(level)
+                                    pygame.display.flip()
+                                    
+                                    # Play animation with current state
+                                    animate_word_panel_sequence(screen, selected_word['word'], current_guessed_letters, "pop")
                                     pygame.time.delay(500)
                                     
-                                    # Check for tier completion before incrementing level
+                                    # Now update game state
                                     time_bonus = handle_word_completion(screen, level, game_mode, total_time_bonus)
                                     total_time_bonus += time_bonus
                                     
@@ -1574,6 +1774,21 @@ def play_spellout(uid_input, resumed=False):
                             else:
                                 attempts -= 1
                                 wrong_sound.play()
+                                
+                                # Store current state for animation
+                                current_guessed_letters = guessed_letters.copy()
+                                
+                                # Update display one more time before animation
+                                current_bg = get_background_color(level)
+                                screen.blit(current_bg, (0, 0))
+                                draw_word(selected_word, current_guessed_letters)
+                                draw_virtual_keyboard(keys, current_guessed_letters)
+                                draw_attempts(attempts)
+                                draw_levels(level)
+                                pygame.display.flip()
+                                
+                                # Play animation with current state
+                                animate_word_panel_sequence(screen, selected_word['word'], current_guessed_letters, "shake")
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -1582,13 +1797,38 @@ def play_spellout(uid_input, resumed=False):
                     guess = event.unicode.upper()
                     if guess in keys and guess not in guessed_letters:
                         guessed_letters.add(guess)
+                        
+                        # Update the display immediately to show the key change
+                        if game_started and not (game_over or level_completed):
+                            current_bg = get_background_color(level)
+                            screen.blit(current_bg, (0, 0))
+                            draw_word(selected_word, guessed_letters)
+                            draw_virtual_keyboard(keys, guessed_letters)
+                            draw_attempts(attempts)
+                            draw_levels(level)
+                            pygame.display.flip()
+                        
+                        # Process the guess
                         if guess in selected_word['word']:
                             correct_sound.play()
                             if all(l in guessed_letters for l in selected_word['word']):
-                                show_word_flash(screen, selected_word['word'], (0, 255, 0), FONT)
+                                # Store current state for animation
+                                current_guessed_letters = guessed_letters.copy()
+                                
+                                # Update display one more time before animation
+                                current_bg = get_background_color(level)
+                                screen.blit(current_bg, (0, 0))
+                                draw_word(selected_word, current_guessed_letters)
+                                draw_virtual_keyboard(keys, current_guessed_letters)
+                                draw_attempts(attempts)
+                                draw_levels(level)
+                                pygame.display.flip()
+                                
+                                # Play animation with current state
+                                animate_word_panel_sequence(screen, selected_word['word'], current_guessed_letters, "pop")
                                 pygame.time.delay(500)
                                 
-                                # Check for tier completion before incrementing level
+                                # Now update game state
                                 time_bonus = handle_word_completion(screen, level, game_mode, total_time_bonus)
                                 total_time_bonus += time_bonus
                                 
@@ -1611,10 +1851,45 @@ def play_spellout(uid_input, resumed=False):
                         else:
                             attempts -= 1
                             wrong_sound.play()
+                            
+                            # Store current state for animation
+                            current_guessed_letters = guessed_letters.copy()
+                            
+                            # Update display one more time before animation
+                            current_bg = get_background_color(level)
+                            screen.blit(current_bg, (0, 0))
+                            draw_word(selected_word, current_guessed_letters)
+                            draw_virtual_keyboard(keys, current_guessed_letters)
+                            draw_attempts(attempts)
+                            draw_levels(level)
+                            pygame.display.flip()
+                            
+                            # Play animation with current state
+                            animate_word_panel_sequence(screen, selected_word['word'], current_guessed_letters, "shake")
 
         # ❌ LOSS CHECK (outside event loop)
         if not game_over and attempts == 0:
-            show_word_flash(screen, selected_word['word'], (255, 0, 0), FONT)
+            # Store current state for animation
+            current_guessed_letters = guessed_letters.copy()
+            
+            # Update display one last time before game over
+            current_bg = get_background_color(level)
+            screen.blit(current_bg, (0, 0))
+            draw_word(selected_word, current_guessed_letters)
+            draw_virtual_keyboard(keys, current_guessed_letters)
+            draw_attempts(attempts)
+            draw_levels(level)
+            pygame.display.flip()
+            
+            # Play game over sound
+            game_over_sound.play()
+            
+            # Shake animation with current state
+            animate_word_panel_sequence(screen, selected_word['word'], current_guessed_letters, "shake")
+            
+            # Reveal the correct word with animation
+            reveal_word_sequence(screen, selected_word['word'], current_guessed_letters)
+            
             pygame.time.delay(500)
             game_over = True
             end_time = time.time()
