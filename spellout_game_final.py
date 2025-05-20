@@ -857,7 +857,11 @@ def show_last_record(uid_input):
             y_offset = 100
             spacing = 30
 
-            level_text = info_font.render(f"Last Level: {level}", True, BLACK)
+            # Change text based on game mode
+            if current_mode == "classic":
+                level_text = info_font.render(f"Levels Completed: {level}", True, BLACK)
+            else:  # timed mode
+                level_text = info_font.render(f"Words Completed: {level}", True, BLACK)
             manual_surface.blit(level_text, (50, y_offset))
 
             duration_text = info_font.render(f"Duration: {duration:.2f}s", True, BLACK)
